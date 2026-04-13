@@ -123,8 +123,14 @@ Slash commands instalados em `~/.claude/commands/` — invoque com `/<nome>`:
 
 | Command | Uso |
 |---|---|
+| `/api-contract` | Gerar OpenAPI spec ou validar contratos entre serviços |
+| `/arch-design` | Design arquitetural — diagramas C4, ADRs, análise de trade-offs |
+| `/code-review` | Revisão de PR ou diff — security, correctness, performance, testing |
 | `/db-audit` | Auditoria de schema, índices, FKs, migrations, queries e segurança de banco |
 | `/jira-story` | Redigir ou refinar user stories com critérios de aceite e cenários de teste |
+| `/onboard-dev` | Gerar `ONBOARDING.md` completo pra novos devs do projeto |
+| `/smart-commit` | Analisar diff e criar Conventional Commit com type/scope corretos |
+| `/tech-debt` | Escanear e classificar dívida técnica com plano de ação priorizado |
 
 ---
 
