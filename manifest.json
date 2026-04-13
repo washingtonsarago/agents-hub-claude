@@ -54,9 +54,9 @@
     },
     {
       "name": "postgres-dba",
-      "version": "2.1.0",
+      "version": "2.2.0",
       "path": "agents/postgres-dba.md",
-      "sha256": "fe5ad9aed4d1093f2149ec982e3d991d2b05c84ef582f2e793037478af7b8c21",
+      "sha256": "9b7cce0d0766e0abace0028414a2495b3ff00792e811c7a1338e2bb01d99f9ad",
       "scope": "user",
       "description": "PostgreSQL DBA — tuning, replication, HA, troubleshooting"
     },
