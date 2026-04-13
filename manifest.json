@@ -127,6 +127,14 @@
       "description": "Database audit — schema, indexes, FKs, migrations, queries, security"
     },
     {
+      "name": "discovery",
+      "version": "1.0.0",
+      "path": "commands/discovery.md",
+      "sha256": "51077341fc416caf0f86ac3f06e49c4f8501e776b1fdebf3ee143b39e5ddf5a3",
+      "scope": "user",
+      "description": "Product discovery — problem framing, JTBD, assumptions, experiments, go/no-go"
+    },
+    {
       "name": "jira-story",
       "version": "1.0.0",
       "path": "commands/jira-story.md",

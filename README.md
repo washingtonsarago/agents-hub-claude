@@ -279,6 +279,7 @@ Slash commands instalados em `~/.claude/commands/` — invoque com `/<nome>`:
 | `/arch-design` | Design arquitetural — diagramas C4, ADRs, análise de trade-offs |
 | `/code-review` | Revisão de PR ou diff — security, correctness, performance, testing |
 | `/db-audit` | Auditoria de schema, índices, FKs, migrations, queries e segurança de banco |
+| `/discovery` | Product discovery — problem framing, JTBD, assumptions, experimentos, go/no-go |
 | `/jira-story` | Redigir ou refinar user stories com critérios de aceite e cenários de teste |
 | `/onboard-dev` | Gerar `ONBOARDING.md` completo pra novos devs do projeto |
 | `/smart-commit` | Analisar diff e criar Conventional Commit com type/scope corretos |
