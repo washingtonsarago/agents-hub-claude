@@ -1,11 +1,11 @@
 # agents-hub-claude
 
-Registry centralizado de **agents do Claude Code** da EMS-NCTECH, com CLI própria (`ahc`) que sincroniza os agents automaticamente em cada máquina.
+Registry centralizado de **agents e commands do Claude Code** da EMS-NCTECH, com CLI própria (`ahc`) que sincroniza tudo automaticamente em cada máquina.
 
 - **Fonte da verdade:** `manifest.json` com versão e `sha256` de cada agent
 - **CLI:** `ahc` — Node zero-deps, distribuída via `install.sh`
 - **Auto-update:** hook `SessionStart` do Claude Code roda `ahc sync` a cada sessão
-- **Destino dos arquivos:** `~/.claude/agents/`
+- **Destino dos arquivos:** `~/.claude/agents/` (agents) e `~/.claude/commands/` (slash commands)
 
 ---
 
@@ -117,6 +117,14 @@ Lista atual (ver `manifest.json` para versões e hashes):
 | `senior-react-developer` | React, hooks, state, acessibilidade, testes |
 | `system-architect` | Arquitetura, ADRs, C4, análise de trade-offs |
 
+## Commands disponíveis
+
+Slash commands instalados em `~/.claude/commands/` — invoque com `/<nome>`:
+
+| Command | Uso |
+|---|---|
+| `/db-audit` | Auditoria de schema, índices, FKs, migrations, queries e segurança de banco |
+
 ---
 
 ## Adicionando / atualizando um agent
@@ -140,10 +148,11 @@ Assim que o PR for mergeado, todos os devs com `ahc` instalado vão receber a at
 
 ```
 .
-├── agents/              # arquivos .md dos agents (source of truth)
+├── agents/              # .md dos agents (source of truth)
+├── commands/            # .md dos slash commands
 ├── bin/
 │   └── ahc              # CLI Node zero-deps
-├── manifest.json        # index com versão + sha256 de cada agent
+├── manifest.json        # index com versão + sha256 por item (agents + commands)
 ├── install.sh           # bootstrap: instala ahc + configura hook
 └── README.md
 ```

@@ -13,11 +13,17 @@ const { URL } = require('url');
 const HOME = os.homedir();
 const CLAUDE_DIR = path.join(HOME, '.claude');
 const AGENTS_DIR = path.join(CLAUDE_DIR, 'agents');
+const COMMANDS_DIR = path.join(CLAUDE_DIR, 'commands');
 const LOCK_FILE = path.join(CLAUDE_DIR, '.ahc-lock.json');
 const CONFIG_FILE = path.join(CLAUDE_DIR, '.ahc-config.json');
 
+const CATEGORIES = [
+  { key: 'agents',   manifestKey: 'agents',   dir: AGENTS_DIR,   label: 'agent',   ext: '.md' },
+  { key: 'commands', manifestKey: 'commands', dir: COMMANDS_DIR, label: 'command', ext: '.md' },
+];
+
 const DEFAULT_CONFIG = {
-  repo: 'grupo-nc/agents-hub-claude',
+  repo: 'EMS-NCTECH/agents-hub-claude',
   branch: 'main',
   channel: 'stable',
 };
@@ -41,7 +47,13 @@ function writeJSON(p, obj) {
 }
 
 function loadConfig() { return { ...DEFAULT_CONFIG, ...readJSON(CONFIG_FILE, {}) }; }
-function loadLock() { return readJSON(LOCK_FILE, { agents: {}, pins: {} }); }
+function loadLock() {
+  const lock = readJSON(LOCK_FILE, { agents: {}, commands: {}, pins: {} });
+  if (!lock.agents) lock.agents = {};
+  if (!lock.commands) lock.commands = {};
+  if (!lock.pins) lock.pins = {};
+  return lock;
+}
 function saveLock(lock) { writeJSON(LOCK_FILE, lock); }
 
 function fetchURL(url) {
@@ -76,6 +88,41 @@ function rawURL(cfg, filePath) {
 
 function sha256(s) { return crypto.createHash('sha256').update(s).digest('hex'); }
 
+async function syncCategory(cat, manifest, lock, cfg) {
+  const items = manifest[cat.manifestKey] || [];
+  if (items.length === 0) return { added: 0, updated: 0, skipped: 0, pinned: 0 };
+
+  fs.mkdirSync(cat.dir, { recursive: true });
+  let updated = 0, added = 0, skipped = 0, pinned = 0;
+
+  for (const item of items) {
+    if (item.scope && item.scope !== 'user') continue;
+    const target = path.join(cat.dir, `${item.name}${cat.ext}`);
+    const current = lock[cat.key][item.name];
+    const pin = lock.pins[item.name];
+
+    if (pin && pin !== item.version && !FLAGS.force) {
+      pinned++;
+      log(`[pinned]  ${cat.label} ${item.name} @ ${pin} (remote ${item.version})`);
+      continue;
+    }
+    if (current && current.sha256 === item.sha256 && fs.existsSync(target)) { skipped++; continue; }
+
+    const body = await fetchURL(rawURL(cfg, item.path));
+    const got = sha256(body);
+    if (got !== item.sha256) {
+      err(`[ahc] hash mismatch for ${cat.label} ${item.name}: expected ${item.sha256}, got ${got}`);
+      continue;
+    }
+    fs.writeFileSync(target, body);
+    lock[cat.key][item.name] = { version: item.version, sha256: item.sha256, path: target };
+    if (current) { updated++; log(`[updated] ${cat.label} ${item.name} ${current.version} → ${item.version}`); }
+    else { added++; log(`[added]   ${cat.label} ${item.name} ${item.version}`); }
+  }
+
+  return { added, updated, skipped, pinned };
+}
+
 async function cmdSync() {
   const cfg = loadConfig();
   const lock = loadLock();
@@ -88,38 +135,19 @@ async function cmdSync() {
     process.exit(FLAGS.quiet ? 0 : 1);
   }
 
-  fs.mkdirSync(AGENTS_DIR, { recursive: true });
-  let updated = 0, added = 0, skipped = 0, pinned = 0;
-
-  for (const a of manifest.agents) {
-    if (a.scope && a.scope !== 'user') continue;
-    const target = path.join(AGENTS_DIR, `${a.name}.md`);
-    const current = lock.agents[a.name];
-    const pin = lock.pins[a.name];
-
-    if (pin && pin !== a.version && !FLAGS.force) {
-      pinned++;
-      log(`[pinned] ${a.name} @ ${pin} (remote ${a.version})`);
-      continue;
-    }
-    if (current && current.sha256 === a.sha256 && fs.existsSync(target)) { skipped++; continue; }
-
-    const body = await fetchURL(rawURL(cfg, a.path));
-    const got = sha256(body);
-    if (got !== a.sha256) {
-      err(`[ahc] hash mismatch for ${a.name}: expected ${a.sha256}, got ${got}`);
-      continue;
-    }
-    fs.writeFileSync(target, body);
-    lock.agents[a.name] = { version: a.version, sha256: a.sha256, path: target };
-    if (current) { updated++; log(`[updated] ${a.name} ${current.version} → ${a.version}`); }
-    else { added++; log(`[added]   ${a.name} ${a.version}`); }
+  const totals = { added: 0, updated: 0, skipped: 0, pinned: 0 };
+  for (const cat of CATEGORIES) {
+    const r = await syncCategory(cat, manifest, lock, cfg);
+    totals.added += r.added;
+    totals.updated += r.updated;
+    totals.skipped += r.skipped;
+    totals.pinned += r.pinned;
   }
 
   lock.last_sync = new Date().toISOString();
   lock.manifest_version = manifest.version;
   saveLock(lock);
-  log(`[ahc] sync ok — added:${added} updated:${updated} skipped:${skipped} pinned:${pinned}`);
+  log(`[ahc] sync ok — added:${totals.added} updated:${totals.updated} skipped:${totals.skipped} pinned:${totals.pinned}`);
 }
 
 async function cmdList() {
@@ -129,23 +157,27 @@ async function cmdList() {
   try { manifest = JSON.parse(await fetchURL(rawURL(cfg, 'manifest.json'))); } catch {}
 
   console.log(`repo: ${cfg.repo}@${cfg.branch} (${cfg.channel})`);
-  console.log('');
-  const names = new Set([
-    ...Object.keys(lock.agents || {}),
-    ...(manifest ? manifest.agents.map(a => a.name) : []),
-  ]);
-  for (const name of [...names].sort()) {
-    const local = lock.agents[name];
-    const remote = manifest ? manifest.agents.find(a => a.name === name) : null;
-    const pin = lock.pins[name];
-    let status = '  ';
-    if (!local && remote) status = '++';
-    else if (local && remote && local.sha256 !== remote.sha256) status = '↑↑';
-    else if (local && !remote) status = '--';
-    const v = local ? local.version : '-';
-    const r = remote ? remote.version : '-';
-    const pinTag = pin ? ` [pin:${pin}]` : '';
-    console.log(`${status} ${name.padEnd(28)} local:${v.padEnd(8)} remote:${r}${pinTag}`);
+
+  for (const cat of CATEGORIES) {
+    const remoteItems = manifest ? (manifest[cat.manifestKey] || []) : [];
+    const localItems = lock[cat.key] || {};
+    const names = new Set([...Object.keys(localItems), ...remoteItems.map(i => i.name)]);
+    if (names.size === 0) continue;
+
+    console.log(`\n${cat.key.toUpperCase()}`);
+    for (const name of [...names].sort()) {
+      const local = localItems[name];
+      const remote = remoteItems.find(i => i.name === name);
+      const pin = lock.pins[name];
+      let status = '  ';
+      if (!local && remote) status = '++';
+      else if (local && remote && local.sha256 !== remote.sha256) status = '↑↑';
+      else if (local && !remote) status = '--';
+      const v = local ? local.version : '-';
+      const r = remote ? remote.version : '-';
+      const pinTag = pin ? ` [pin:${pin}]` : '';
+      console.log(`${status} ${name.padEnd(30)} local:${v.padEnd(8)} remote:${r}${pinTag}`);
+    }
   }
   console.log('\nlegend: ++ new  ↑↑ update available  -- removed remotely');
 }
@@ -184,15 +216,16 @@ function help() {
   console.log(`ahc — agents-hub-claude
 
 commands:
-  sync [--quiet] [--timeout=N] [--force]   fetch manifest and update agents
-  list                                     show local vs remote state
-  pin <name>@<version>                     pin an agent version
+  sync [--quiet] [--timeout=N] [--force]   fetch manifest and update agents + commands
+  list                                     show local vs remote state (by category)
+  pin <name>@<version>                     pin an item version (agent or command)
   unpin <name>                             remove pin
   config [key=value]                       show or set config (repo, branch, channel)
   help                                     this message
 
 files:
   ~/.claude/agents/                        where agents are installed
+  ~/.claude/commands/                      where commands are installed
   ~/.claude/.ahc-lock.json                 local lock
   ~/.claude/.ahc-config.json               local config
 `);

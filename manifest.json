@@ -92,5 +92,15 @@
       "scope": "user",
       "description": "Architecture, ADRs, C4, trade-off analysis"
     }
+  ],
+  "commands": [
+    {
+      "name": "db-audit",
+      "version": "1.0.0",
+      "path": "commands/db-audit.md",
+      "sha256": "146f8cfd2b7b64a696fd9ef5021cd8d4070d94a2ba8d30b4a9ed2dc393da9e12",
+      "scope": "user",
+      "description": "Database audit — schema, indexes, FKs, migrations, queries, security"
+    }
   ]
 }
