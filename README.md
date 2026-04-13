@@ -124,6 +124,7 @@ Slash commands instalados em `~/.claude/commands/` — invoque com `/<nome>`:
 | Command | Uso |
 |---|---|
 | `/db-audit` | Auditoria de schema, índices, FKs, migrations, queries e segurança de banco |
+| `/jira-story` | Redigir ou refinar user stories com critérios de aceite e cenários de teste |
 
 ---
 

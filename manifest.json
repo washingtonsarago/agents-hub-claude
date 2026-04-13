@@ -101,6 +101,14 @@
       "sha256": "146f8cfd2b7b64a696fd9ef5021cd8d4070d94a2ba8d30b4a9ed2dc393da9e12",
       "scope": "user",
       "description": "Database audit — schema, indexes, FKs, migrations, queries, security"
+    },
+    {
+      "name": "jira-story",
+      "version": "1.0.0",
+      "path": "commands/jira-story.md",
+      "sha256": "b63552c01487e34f1c88a7f9041cfabade742fd33fa7da2e57dc40db5ee79dbc",
+      "scope": "user",
+      "description": "Draft or refine Jira user stories with acceptance criteria and test scenarios"
     }
   ]
 }
