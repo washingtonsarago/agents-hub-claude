@@ -1,0 +1,214 @@
+#!/usr/bin/env node
+// ahc — agents-hub-claude CLI
+// Zero-dep Node. Commands: sync | list | pin | unpin | config
+
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const https = require('https');
+const http = require('http');
+const crypto = require('crypto');
+const { URL } = require('url');
+
+const HOME = os.homedir();
+const CLAUDE_DIR = path.join(HOME, '.claude');
+const AGENTS_DIR = path.join(CLAUDE_DIR, 'agents');
+const LOCK_FILE = path.join(CLAUDE_DIR, '.ahc-lock.json');
+const CONFIG_FILE = path.join(CLAUDE_DIR, '.ahc-config.json');
+
+const DEFAULT_CONFIG = {
+  repo: 'grupo-nc/agents-hub-claude',
+  branch: 'main',
+  channel: 'stable',
+};
+
+const ARGS = process.argv.slice(2);
+const FLAGS = {
+  quiet: ARGS.includes('--quiet'),
+  timeout: parseInt((ARGS.find(a => a.startsWith('--timeout')) || '').split('=')[1] || '10', 10) * 1000 || 10000,
+  force: ARGS.includes('--force'),
+};
+
+function log(...a) { if (!FLAGS.quiet) console.log(...a); }
+function err(...a) { console.error(...a); }
+
+function readJSON(p, fallback) {
+  try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return fallback; }
+}
+function writeJSON(p, obj) {
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, JSON.stringify(obj, null, 2) + '\n');
+}
+
+function loadConfig() { return { ...DEFAULT_CONFIG, ...readJSON(CONFIG_FILE, {}) }; }
+function loadLock() { return readJSON(LOCK_FILE, { agents: {}, pins: {} }); }
+function saveLock(lock) { writeJSON(LOCK_FILE, lock); }
+
+function fetchURL(url) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const lib = u.protocol === 'file:' ? null : (u.protocol === 'http:' ? http : https);
+    if (!lib) {
+      try { resolve(fs.readFileSync(u.pathname, 'utf8')); } catch (e) { reject(e); }
+      return;
+    }
+    const req = lib.get(url, { timeout: FLAGS.timeout, headers: { 'User-Agent': 'ahc' } }, res => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        fetchURL(res.headers.location).then(resolve, reject);
+        return;
+      }
+      if (res.statusCode !== 200) { reject(new Error(`HTTP ${res.statusCode} ${url}`)); return; }
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => resolve(data));
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(new Error('timeout')); });
+  });
+}
+
+function rawURL(cfg, filePath) {
+  if (cfg.repo.startsWith('file://') || cfg.repo.startsWith('http')) {
+    return `${cfg.repo.replace(/\/$/, '')}/${filePath}`;
+  }
+  return `https://raw.githubusercontent.com/${cfg.repo}/${cfg.branch}/${filePath}`;
+}
+
+function sha256(s) { return crypto.createHash('sha256').update(s).digest('hex'); }
+
+async function cmdSync() {
+  const cfg = loadConfig();
+  const lock = loadLock();
+  let manifest;
+  try {
+    const raw = await fetchURL(rawURL(cfg, 'manifest.json'));
+    manifest = JSON.parse(raw);
+  } catch (e) {
+    err(`[ahc] offline or unreachable (${e.message}) — keeping local cache`);
+    process.exit(FLAGS.quiet ? 0 : 1);
+  }
+
+  fs.mkdirSync(AGENTS_DIR, { recursive: true });
+  let updated = 0, added = 0, skipped = 0, pinned = 0;
+
+  for (const a of manifest.agents) {
+    if (a.scope && a.scope !== 'user') continue;
+    const target = path.join(AGENTS_DIR, `${a.name}.md`);
+    const current = lock.agents[a.name];
+    const pin = lock.pins[a.name];
+
+    if (pin && pin !== a.version && !FLAGS.force) {
+      pinned++;
+      log(`[pinned] ${a.name} @ ${pin} (remote ${a.version})`);
+      continue;
+    }
+    if (current && current.sha256 === a.sha256 && fs.existsSync(target)) { skipped++; continue; }
+
+    const body = await fetchURL(rawURL(cfg, a.path));
+    const got = sha256(body);
+    if (got !== a.sha256) {
+      err(`[ahc] hash mismatch for ${a.name}: expected ${a.sha256}, got ${got}`);
+      continue;
+    }
+    fs.writeFileSync(target, body);
+    lock.agents[a.name] = { version: a.version, sha256: a.sha256, path: target };
+    if (current) { updated++; log(`[updated] ${a.name} ${current.version} → ${a.version}`); }
+    else { added++; log(`[added]   ${a.name} ${a.version}`); }
+  }
+
+  lock.last_sync = new Date().toISOString();
+  lock.manifest_version = manifest.version;
+  saveLock(lock);
+  log(`[ahc] sync ok — added:${added} updated:${updated} skipped:${skipped} pinned:${pinned}`);
+}
+
+async function cmdList() {
+  const cfg = loadConfig();
+  const lock = loadLock();
+  let manifest = null;
+  try { manifest = JSON.parse(await fetchURL(rawURL(cfg, 'manifest.json'))); } catch {}
+
+  console.log(`repo: ${cfg.repo}@${cfg.branch} (${cfg.channel})`);
+  console.log('');
+  const names = new Set([
+    ...Object.keys(lock.agents || {}),
+    ...(manifest ? manifest.agents.map(a => a.name) : []),
+  ]);
+  for (const name of [...names].sort()) {
+    const local = lock.agents[name];
+    const remote = manifest ? manifest.agents.find(a => a.name === name) : null;
+    const pin = lock.pins[name];
+    let status = '  ';
+    if (!local && remote) status = '++';
+    else if (local && remote && local.sha256 !== remote.sha256) status = '↑↑';
+    else if (local && !remote) status = '--';
+    const v = local ? local.version : '-';
+    const r = remote ? remote.version : '-';
+    const pinTag = pin ? ` [pin:${pin}]` : '';
+    console.log(`${status} ${name.padEnd(28)} local:${v.padEnd(8)} remote:${r}${pinTag}`);
+  }
+  console.log('\nlegend: ++ new  ↑↑ update available  -- removed remotely');
+}
+
+function cmdPin() {
+  const spec = ARGS[1];
+  if (!spec || !spec.includes('@')) { err('usage: ahc pin <name>@<version>'); process.exit(2); }
+  const [name, version] = spec.split('@');
+  const lock = loadLock();
+  lock.pins[name] = version;
+  saveLock(lock);
+  console.log(`[pinned] ${name} @ ${version}`);
+}
+
+function cmdUnpin() {
+  const name = ARGS[1];
+  if (!name) { err('usage: ahc unpin <name>'); process.exit(2); }
+  const lock = loadLock();
+  delete lock.pins[name];
+  saveLock(lock);
+  console.log(`[unpinned] ${name}`);
+}
+
+function cmdConfig() {
+  const kv = ARGS[1];
+  if (!kv) { console.log(JSON.stringify(loadConfig(), null, 2)); return; }
+  if (!kv.includes('=')) { err('usage: ahc config <key>=<value>'); process.exit(2); }
+  const [k, v] = kv.split('=');
+  const cfg = loadConfig();
+  cfg[k] = v;
+  writeJSON(CONFIG_FILE, cfg);
+  console.log(`[config] ${k} = ${v}`);
+}
+
+function help() {
+  console.log(`ahc — agents-hub-claude
+
+commands:
+  sync [--quiet] [--timeout=N] [--force]   fetch manifest and update agents
+  list                                     show local vs remote state
+  pin <name>@<version>                     pin an agent version
+  unpin <name>                             remove pin
+  config [key=value]                       show or set config (repo, branch, channel)
+  help                                     this message
+
+files:
+  ~/.claude/agents/                        where agents are installed
+  ~/.claude/.ahc-lock.json                 local lock
+  ~/.claude/.ahc-config.json               local config
+`);
+}
+
+(async () => {
+  const cmd = ARGS[0] || 'help';
+  try {
+    if (cmd === 'sync') await cmdSync();
+    else if (cmd === 'list') await cmdList();
+    else if (cmd === 'pin') cmdPin();
+    else if (cmd === 'unpin') cmdUnpin();
+    else if (cmd === 'config') cmdConfig();
+    else help();
+  } catch (e) {
+    err(`[ahc] ${e.message}`);
+    process.exit(1);
+  }
+})();

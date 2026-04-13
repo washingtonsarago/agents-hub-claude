@@ -1,0 +1,80 @@
+{
+  "version": 1,
+  "channel": "stable",
+  "updated_at": "2026-04-13",
+  "repo": "EMS-NCTECH/agents-hub-claude",
+  "agents": [
+    {
+      "name": "aws-devops-engineer",
+      "version": "1.0.0",
+      "path": "agents/aws-devops-engineer.md",
+      "sha256": "601854a43f655eb0439e2eda36d31e492528242b0965ebc87eb1ce847c3b7c21",
+      "scope": "user",
+      "description": "AWS infra, CI/CD, Terraform, EKS, observability"
+    },
+    {
+      "name": "cypress-qa-analyst",
+      "version": "1.0.0",
+      "path": "agents/cypress-qa-analyst.md",
+      "sha256": "8f6ffd06483e2eb008ba494e634cdd70d1740593a5f00c893a83b75925327f76",
+      "scope": "user",
+      "description": "Cypress E2E, test strategy, CI integration"
+    },
+    {
+      "name": "dotnet-backend-architect",
+      "version": "1.0.0",
+      "path": "agents/dotnet-backend-architect.md",
+      "sha256": "f45cc43ac01c849f5b792a02f814282338e265c852f95aab9788e4352c50552f",
+      "scope": "user",
+      "description": ".NET / ASP.NET Core / DDD / CQRS"
+    },
+    {
+      "name": "go-senior-engineer",
+      "version": "1.0.0",
+      "path": "agents/go-senior-engineer.md",
+      "sha256": "35f265fe50e5ce2238a960a17f5fcb6aa769c10c352f54c5f8949a64c4263db8",
+      "scope": "user",
+      "description": "Go senior — concurrency, gRPC, microservices"
+    },
+    {
+      "name": "integration-architect",
+      "version": "1.0.0",
+      "path": "agents/integration-architect.md",
+      "sha256": "8cef66ce9a2dd5aa9af53e2201b8e2a26fbd6d1a70b4d85bb55badec2ded03ad",
+      "scope": "user",
+      "description": "Event-driven, SQS/SNS/Kafka, CDC, orchestration"
+    },
+    {
+      "name": "project-memory-keeper",
+      "version": "1.0.0",
+      "path": "agents/project-memory-keeper.md",
+      "sha256": "87b96010455b7325b4e60151522947db57807d29e54c4ba568841bdaaeb0ad97",
+      "scope": "user",
+      "description": "README / CONTEXT / ADR documentation sync"
+    },
+    {
+      "name": "senior-product-owner",
+      "version": "1.0.0",
+      "path": "agents/senior-product-owner.md",
+      "sha256": "27ac8e29b719674fdf1d548e781151325ee309da930362063373380e5509c620",
+      "scope": "user",
+      "description": "User stories, OKRs, backlog prioritization"
+    },
+    {
+      "name": "senior-react-developer",
+      "version": "1.0.0",
+      "path": "agents/senior-react-developer.md",
+      "sha256": "3cac788f0bd544a6d472e1a9fe71797711088ff079e1067cbe359cef0b3df41a",
+      "scope": "user",
+      "description": "React, hooks, state, accessibility, testing"
+    },
+    {
+      "name": "system-architect",
+      "version": "1.0.0",
+      "path": "agents/system-architect.md",
+      "sha256": "bb9a21703bda0a2a4ca5c71d16b6ff33cafb1b3caec9c41634b5adecf6956d2f",
+      "scope": "user",
+      "description": "Architecture, ADRs, C4, trade-off analysis"
+    }
+  ]
+}
