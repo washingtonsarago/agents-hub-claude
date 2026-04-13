@@ -30,9 +30,9 @@
     },
     {
       "name": "go-sdet-backend",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "path": "agents/go-sdet-backend.md",
-      "sha256": "bf89289e76c7df08487a851974e30d75f1cd861c61880627db0d8d1835ea1f50",
+      "sha256": "b664c7b2339822684e81fae5d1b83bdb958a3098838f8eb072b425cc02d28fac",
       "scope": "user",
       "description": "Go SDET — tests, coverage, race conditions, quality"
     },
@@ -54,9 +54,9 @@
     },
     {
       "name": "postgres-dba",
-      "version": "1.0.0",
+      "version": "2.0.0",
       "path": "agents/postgres-dba.md",
-      "sha256": "c9c8898216b6ea4f887952e8d0f71c4e6e90e93fe4a540677209c9c729a2282f",
+      "sha256": "9b7cce0d0766e0abace0028414a2495b3ff00792e811c7a1338e2bb01d99f9ad",
       "scope": "user",
       "description": "PostgreSQL DBA — tuning, replication, HA, troubleshooting"
     },
