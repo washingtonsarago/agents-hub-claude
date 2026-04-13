@@ -48,27 +48,28 @@ cat > "$CLAUDE_DIR/.ahc-config.json" <<EOF
 }
 EOF
 
-# SessionStart hook (idempotent — skip if already present)
+# SessionStart hook — safely merged into settings.json via node (preserves existing config)
 HOOK_CMD="$BIN_DIR/ahc sync --quiet --timeout=5"
-if [ -f "$SETTINGS" ] && grep -q 'ahc sync' "$SETTINGS" 2>/dev/null; then
-  echo "[ahc] hook already present in settings.json"
-elif [ ! -f "$SETTINGS" ]; then
-  cat > "$SETTINGS" <<EOF
-{
-  "hooks": {
-    "SessionStart": [
-      { "matcher": "*", "hooks": [{ "type": "command", "command": "$HOOK_CMD" }] }
-    ]
-  }
+SETTINGS="$SETTINGS" HOOK_CMD="$HOOK_CMD" node -e '
+const fs = require("fs");
+const f = process.env.SETTINGS;
+const cmd = process.env.HOOK_CMD;
+let s = {};
+if (fs.existsSync(f)) {
+  try { s = JSON.parse(fs.readFileSync(f, "utf8")); }
+  catch (e) { console.error("[ahc] settings.json is invalid JSON; leaving untouched. Fix manually."); process.exit(1); }
 }
-EOF
-  echo "[ahc] created $SETTINGS with SessionStart hook"
-else
-  echo "[ahc] settings.json exists — add this hook manually:"
-  echo
-  echo '  "hooks": { "SessionStart": [{ "matcher": "*", "hooks": [{ "type": "command", "command": "'"$HOOK_CMD"'" }] }] }'
-  echo
-fi
+s.hooks = s.hooks || {};
+s.hooks.SessionStart = s.hooks.SessionStart || [];
+const already = JSON.stringify(s.hooks.SessionStart).includes("ahc sync");
+if (already) { console.log("[ahc] SessionStart hook already configured"); process.exit(0); }
+s.hooks.SessionStart.push({
+  matcher: "*",
+  hooks: [{ type: "command", command: cmd }]
+});
+fs.writeFileSync(f, JSON.stringify(s, null, 2) + "\n");
+console.log("[ahc] SessionStart hook added to " + f);
+' || echo "[ahc] WARNING: failed to configure hook automatically — add this block to $SETTINGS manually: { \"hooks\": { \"SessionStart\": [{ \"matcher\": \"*\", \"hooks\": [{ \"type\": \"command\", \"command\": \"$HOOK_CMD\" }] }] } }"
 
 # First sync
 echo "[ahc] running first sync..."
