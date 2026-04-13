@@ -11,24 +11,176 @@ Registry centralizado de **agents e commands do Claude Code** da EMS-NCTECH, com
 
 ## Instalação
 
-Requisitos: `node`, `git`, `curl` (ou `wget`) e `gh` autenticado na org EMS-NCTECH (o repo é `INTERNAL`).
+O repo é `INTERNAL` na org EMS-NCTECH, então o `ahc` usa `git clone` sob o capô (com as suas credenciais do GitHub) em vez de HTTP anônimo. Requisitos comuns:
+
+- **`git`** — autenticado na org EMS-NCTECH
+- **`node`** (v18+) — o `ahc` CLI é Node puro, zero-deps
+- **`gh` CLI** — recomendado pra autenticação automática (alternativa: PAT no keychain)
+
+### macOS
+
+**1) Instalar pré-requisitos (se não tiver):**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/EMS-NCTECH/agents-hub-claude/main/install.sh | bash
+brew install git node gh
 ```
 
-O instalador:
+**2) Autenticar no GitHub:**
 
-1. Baixa o binário `ahc` para `~/.local/bin/ahc`
-2. Cria `~/.claude/.ahc-config.json` apontando para este repo
-3. Configura o hook `SessionStart` em `~/.claude/settings.json` (se ainda não existir)
-4. Roda um primeiro `ahc sync`
+```bash
+gh auth login
+```
 
-Se `~/.local/bin` não estiver no seu `PATH`, adicione ao seu shell rc:
+Escolha: GitHub.com → HTTPS → "Login with a web browser" → siga o fluxo. Isso configura o git credential helper automaticamente pra clonar repos privados/internal.
+
+**3) Instalar o hub:**
+
+```bash
+cd /tmp
+gh repo clone EMS-NCTECH/agents-hub-claude ahc-boot
+bash ahc-boot/install.sh
+rm -rf ahc-boot
+```
+
+**4) Garantir que `~/.local/bin` está no PATH.** Adiciona ao seu `~/.zshrc` (ou `~/.bash_profile`):
 
 ```bash
 export PATH="$HOME/.local/bin:$PATH"
 ```
+
+Depois recarrega: `source ~/.zshrc`.
+
+**5) Verificar:**
+
+```bash
+ahc list
+```
+
+Deve listar os 11 agents + 8 commands com status `local:X.Y.Z   remote:X.Y.Z`.
+
+---
+
+### Windows
+
+O `install.sh` precisa de um shell bash. No Windows, a forma recomendada é **WSL2** (Ubuntu). Git Bash também funciona com pequenos ajustes.
+
+#### Opção A — WSL2 (recomendada)
+
+**1) Instalar WSL2 + Ubuntu** (no PowerShell como admin):
+
+```powershell
+wsl --install -d Ubuntu
+```
+
+Reinicia o Windows, abre o Ubuntu pelo menu Iniciar, cria seu usuário.
+
+**2) Dentro do Ubuntu (WSL), instalar pré-requisitos:**
+
+```bash
+sudo apt update && sudo apt install -y git curl
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list
+sudo apt update && sudo apt install -y gh
+```
+
+**3) Autenticar no GitHub:**
+
+```bash
+gh auth login
+```
+
+**4) Instalar o hub:**
+
+```bash
+cd /tmp
+gh repo clone EMS-NCTECH/agents-hub-claude ahc-boot
+bash ahc-boot/install.sh
+rm -rf ahc-boot
+```
+
+**5) PATH (WSL bash):**
+
+```bash
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**6) Verificar:**
+
+```bash
+ahc list
+```
+
+> **Importante:** o Claude Code no Windows lê `~/.claude/` a partir do filesystem onde ele roda. Se você usa Claude Code **nativo no Windows**, ele lê `C:\Users\<você>\.claude\` — e o install feito dentro do WSL instala em `/home/<você>/.claude/` (que é outro lugar). Veja a **Opção B** abaixo pra essa situação.
+
+#### Opção B — Git Bash (Claude Code nativo no Windows)
+
+Use quando você roda o Claude Code no Windows (não dentro do WSL).
+
+**1) Instalar pré-requisitos:**
+- [Git for Windows](https://git-scm.com/download/win) (vem com Git Bash)
+- [Node.js LTS](https://nodejs.org/) (v18+)
+- [GitHub CLI](https://cli.github.com/)
+
+**2) Abrir o Git Bash** (não PowerShell nem cmd) e autenticar:
+
+```bash
+gh auth login
+```
+
+**3) Instalar o hub:**
+
+```bash
+cd /tmp
+gh repo clone EMS-NCTECH/agents-hub-claude ahc-boot
+bash ahc-boot/install.sh
+rm -rf ahc-boot
+```
+
+O `install.sh` vai detectar `$HOME` como `C:\Users\<você>` no Git Bash e instalar em:
+- CLI: `C:\Users\<você>\.local\bin\ahc`
+- Agents: `C:\Users\<você>\.claude\agents\`
+- Commands: `C:\Users\<você>\.claude\commands\`
+- Cache: `C:\Users\<você>\.claude\.ahc-cache\`
+
+**4) Adicionar `~/.local/bin` ao PATH do Windows** (necessário pro Claude Code achar o `ahc` ao disparar o hook):
+
+- Abre **Configurações do Windows** → busca "variáveis de ambiente" → "Editar as variáveis de ambiente do sistema"
+- Em **Variáveis de Ambiente** → **Path** (usuário) → Editar → Novo
+- Adiciona: `%USERPROFILE%\.local\bin`
+- OK. Fecha e reabre o Git Bash / Claude Code.
+
+**5) Verificar:**
+
+```bash
+ahc list
+```
+
+---
+
+### Solução de problemas
+
+**`fatal: could not read Username for 'https://github.com'`**
+Git não tem credenciais. Rode `gh auth login` e tente de novo. Se já tiver rodado, force o credential helper: `gh auth setup-git`.
+
+**`ahc: command not found` depois do install**
+`~/.local/bin` não está no PATH. Veja os passos de PATH por plataforma acima.
+
+**`ahc sync` funciona manual, mas auto-update não roda ao abrir o Claude Code**
+O hook `SessionStart` não está no `settings.json`. Confirme com:
+```bash
+grep -c 'ahc sync' ~/.claude/settings.json
+```
+Se retornar `0`, re-rode o `install.sh` — ele faz merge seguro no settings.json existente.
+
+**Claude Code no Windows não encontra o `ahc` ao disparar o hook**
+O PATH do Claude Code (processo gráfico) não herda alterações feitas no Git Bash. Configure `%USERPROFILE%\.local\bin` no PATH via Configurações do Windows (passo 4 da Opção B) e reabra o Claude Code.
+
+**`node: command not found`**
+Instala Node.js LTS (v18+). Mac: `brew install node`. Windows: [nodejs.org](https://nodejs.org/). WSL: ver passo 2 da Opção A.
 
 ---
 
