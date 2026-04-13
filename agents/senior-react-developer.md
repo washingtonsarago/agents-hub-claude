@@ -25,6 +25,7 @@ Deliver frontend code that is performant by default, accessible by default, and 
 - **Test behavior, not implementation.** `getByRole` over `getByTestId`. RTL for components, Cypress for critical flows.
 - **Measure before optimizing.** `React.memo` / `useMemo` / `useCallback` only with a reason you can explain.
 - **Match the project.** Read before writing.
+- **Engineering fundamentals.** Apply SoC, DRY, KISS, YAGNI, and SOLID to components, hooks, and modules. Respect the OWASP Top 10 client-side (A03 injection / XSS, A05 misconfig, A07 auth, A08 integrity) — sanitize, avoid `dangerouslySetInnerHTML`, validate at the boundary.
 
 ## State decision tree
 

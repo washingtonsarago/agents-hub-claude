@@ -6,73 +6,89 @@
   "agents": [
     {
       "name": "aws-devops-engineer",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "path": "agents/aws-devops-engineer.md",
-      "sha256": "16d5891131d845d4c31848bec3397f2e37ac7a5ff760d2590f468b4d0aa9b1b8",
+      "sha256": "37c21e24f74d31c09028f22dae8d82689e087abaf3bcc4ba58e8f1f734b2a9cd",
       "scope": "user",
       "description": "AWS infra, CI/CD, Terraform, EKS, observability"
     },
     {
       "name": "cypress-qa-analyst",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "path": "agents/cypress-qa-analyst.md",
-      "sha256": "fafa156b144a869f83967acb344291aae45f95782c359a0747cb821532a5a3cb",
+      "sha256": "25262e70fdb8198f3825bc0e9122943328a33e15e270f95ebef6468a1d17b184",
       "scope": "user",
       "description": "Cypress E2E, test strategy, CI integration"
     },
     {
       "name": "dotnet-backend-architect",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "path": "agents/dotnet-backend-architect.md",
-      "sha256": "f6494a0e4c552759b2823b9a2461436b1eec60aa6472cf298107872bdf89f430",
+      "sha256": "6a6be9bd5ff99d203554987a0a0b42ec15fea0808d8bda53b28fa9056c82cbf1",
       "scope": "user",
-      "description": ".NET / ASP.NET Core / DDD / CQRS"
+      "description": ".NET / ASP.NET Core / DDD / CQRS (native, no MediatR)"
+    },
+    {
+      "name": "go-sdet-backend",
+      "version": "1.0.0",
+      "path": "agents/go-sdet-backend.md",
+      "sha256": "bf89289e76c7df08487a851974e30d75f1cd861c61880627db0d8d1835ea1f50",
+      "scope": "user",
+      "description": "Go SDET — tests, coverage, race conditions, quality"
     },
     {
       "name": "go-senior-engineer",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "path": "agents/go-senior-engineer.md",
-      "sha256": "e747954761b7d0f6d980e27daa6f51747d639cddcdda10461ee8c5460d32bc49",
+      "sha256": "04724b62a6000ae783cb59fe894c3021f380225533709470e4aedcb80b2602e9",
       "scope": "user",
       "description": "Go senior — concurrency, gRPC, microservices"
     },
     {
       "name": "integration-architect",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "path": "agents/integration-architect.md",
-      "sha256": "412a9d2b3c0f5265c5ea8a8c81ed7a23acca5a624672f724fbf00a631c1fa703",
+      "sha256": "b17e82a943e5282460d57313c176a9f6dbe368735068d75de146dbc35f171d6a",
       "scope": "user",
       "description": "Event-driven, SQS/SNS/Kafka, CDC, orchestration"
     },
     {
+      "name": "postgres-dba",
+      "version": "1.0.0",
+      "path": "agents/postgres-dba.md",
+      "sha256": "c9c8898216b6ea4f887952e8d0f71c4e6e90e93fe4a540677209c9c729a2282f",
+      "scope": "user",
+      "description": "PostgreSQL DBA — tuning, replication, HA, troubleshooting"
+    },
+    {
       "name": "project-memory-keeper",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "path": "agents/project-memory-keeper.md",
-      "sha256": "3b9324c2652cea7515fb13bea824430641bceb747b5d9e657e1691f4345ba3a5",
+      "sha256": "f4267f922922a452befda3aa91d92a7941e619021fe2941dc98b4fa615f24ba3",
       "scope": "user",
       "description": "README / CONTEXT / ADR documentation sync"
     },
     {
       "name": "senior-product-owner",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "path": "agents/senior-product-owner.md",
-      "sha256": "b4f14f1a15c684e86576185d67f25db1e7ce5fff61c182c265540719934cac40",
+      "sha256": "e05e5c12f40b5f296b994e81c7b958f317d6ae8ed63d5a8434195356bc276a5e",
       "scope": "user",
       "description": "User stories, OKRs, backlog prioritization"
     },
     {
       "name": "senior-react-developer",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "path": "agents/senior-react-developer.md",
-      "sha256": "d53929dea6f3e1fcb4e04ca18f60998fbb3af780dd7c0a00b5937dbbb784a11e",
+      "sha256": "20c5f93b1025bb69f40a27b87845bd54d1d2616cb6fe954a883d8143d0476425",
       "scope": "user",
       "description": "React, hooks, state, accessibility, testing"
     },
     {
       "name": "system-architect",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "path": "agents/system-architect.md",
-      "sha256": "e923376fc02536406c2cae09d47935ad32797776fa2589fd0a0b14884b72c8b5",
+      "sha256": "d255471e4722c72ccbca36e29d7ca314f2af9f59e194ad1b489f092f18fe0f15",
       "scope": "user",
       "description": "Architecture, ADRs, C4, trade-off analysis"
     }

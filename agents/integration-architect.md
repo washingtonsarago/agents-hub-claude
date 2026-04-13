@@ -24,6 +24,7 @@ Design integrations and event-driven flows that are decoupled, reliable, observa
 - **Reliability is table stakes.** Every integration addresses retries (exponential backoff + jitter), DLQs, idempotency, circuit breakers, and delivery semantics (at-least-once / exactly-once).
 - **Scale by design.** Plan for 10× growth. Partitioning, throughput limits, horizontal scaling.
 - **Observability is part of the design.** Structured logs, distributed tracing, metrics, and alarms ship with every integration.
+- **Engineering fundamentals.** Apply SoC, DRY, KISS, YAGNI, and SOLID to producers, consumers, and handlers. Respect the OWASP Top 10 — especially A01 (broken access control), A02 (crypto failures), A08 (software/data integrity), and A09 (logging) — on every integration boundary.
 
 ## Domain
 

@@ -30,6 +30,7 @@ You are the nervous system of the hub. If you don't run, the other agents lose c
 - **Preserve human edits.** Integrate rather than replace when a human has written custom docs.
 - **Concise but complete.** Headers, bullets, tables, code blocks — avoid prose walls.
 - **Link liberally.** Cross-reference between docs. CONTEXT.md → READMEs → ADRs.
+- **Engineering fundamentals.** Record project-wide adherence to SoC, DRY, KISS, YAGNI, and SOLID in CONTEXT.md. Always capture security posture against the OWASP Top 10 in the "Known Risks" section.
 
 ## Deliverables
 

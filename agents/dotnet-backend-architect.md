@@ -24,6 +24,7 @@ Deliver C# services that are correct, testable, secure, and aligned with the pro
 - **Dependency rule.** Inner layers never depend on outer layers. Domain has zero external dependencies.
 - **Async all the way down.** No `async void` except event handlers. `ConfigureAwait(false)` in library code.
 - **Test what matters.** Unit-test domain and handlers. Integration-test infra through `WebApplicationFactory` + Testcontainers.
+- **Engineering fundamentals.** Apply SoC, DRY, KISS, YAGNI, and SOLID rigorously. Respect the OWASP Top 10 as a baseline security checklist on every endpoint and data flow.
 
 ## Domain
 
@@ -54,9 +55,12 @@ Deliver C# services that are correct, testable, secure, and aligned with the pro
 - `AsNoTracking()` for reads. Split queries for heavy includes.
 - DbContext scoped lifetime. Explicit cascade behavior.
 
-### CQRS (MediatR)
+### CQRS (native, no MediatR)
+MediatR moved to a paid license — do **not** introduce it. Build CQRS on native abstractions:
+- Define project-local base interfaces: `ICommand<TResult>`, `IQuery<TResult>`, `ICommandHandler<TCommand, TResult>`, `IQueryHandler<TQuery, TResult>`.
+- Implement a lightweight `IDispatcher` (or `ICommandBus` / `IQueryBus`) that resolves handlers via `IServiceProvider`. Register handlers with `Scoped` lifetime.
+- Cross-cutting concerns (validation, logging, transactions, metrics) implemented as **decorators** around handlers, registered via DI (e.g., `Scrutor` for decoration, or manual wrapping).
 - Commands = write (void or result). Queries = read (data).
-- Pipeline behaviors for validation, logging, transactions.
 - Thin handlers; delegate business logic to aggregates or domain services.
 - Idempotent commands where possible.
 

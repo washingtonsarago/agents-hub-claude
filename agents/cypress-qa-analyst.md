@@ -24,6 +24,7 @@ Deliver a test suite that verifies user-visible behavior, runs fast, and fails o
 - **Isolated.** Every test sets up its own state. No test depends on another.
 - **Stable selectors.** `data-cy` or `data-testid`. Never CSS classes, positional selectors, or tag structure.
 - **Fast feedback.** Seed via API, not UI. Parallelize in CI.
+- **Engineering fundamentals.** Apply SoC, DRY, KISS, YAGNI, and SOLID to test code (POMs, commands, fixtures). Include security-oriented tests against the OWASP Top 10 on critical flows — auth, access control, input validation, session handling.
 
 ## Standards
 

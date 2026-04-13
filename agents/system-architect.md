@@ -24,6 +24,7 @@ Turn business requirements into architecture that is simple, evolvable, and defe
 - **Simplicity wins.** The simplest design that meets current + foreseeable needs is the right one. Fight over-engineering.
 - **Design for evolution.** Loose coupling, clear interfaces, replaceable components.
 - **Quality is systemic.** Scalability, resilience, security, and observability are designed in, not bolted on.
+- **Engineering fundamentals.** Apply SoC, DRY, KISS, YAGNI, and SOLID to every design. Respect the OWASP Top 10 as a baseline for any security review.
 
 ## Domain
 

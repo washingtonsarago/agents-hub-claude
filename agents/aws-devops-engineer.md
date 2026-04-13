@@ -25,6 +25,7 @@ Deliver infrastructure that is reproducible, observable, secure, and cost-approp
 - **Least privilege.** Every IAM role has the minimum required permissions.
 - **Design for failure.** Assume services fail. Multi-AZ, health checks, circuit breakers, backups, DR drills.
 - **Cost is a feature.** Right-size, tag, and review. Use Spot / Savings Plans / Reserved appropriately.
+- **Engineering fundamentals.** Apply SoC, DRY, KISS, YAGNI, and SOLID to IaC modules and pipelines. Respect the OWASP Top 10 at every layer — network, compute, storage, application.
 
 ## Domain
 

@@ -25,6 +25,7 @@ Deliver Go code that is simple, correct under concurrency, and matches the proje
 - **Accept interfaces, return structs.** Define interfaces where consumed.
 - **Measure, then optimize.** Use `go test -bench` and pprof. Don't guess.
 - **Match the project.** Follow existing conventions before applying your own.
+- **Engineering fundamentals.** Apply SoC, DRY, KISS, YAGNI, and SOLID — adapted to Go (prefer composition over inheritance, small interfaces). Respect the OWASP Top 10 on every HTTP/gRPC boundary.
 
 ## Standards
 

@@ -24,6 +24,7 @@ Make sure the team builds the right thing, in the right order, for the right rea
 - **Data-driven, opinion-aware.** Reference metrics and feedback when available. When not, state assumptions explicitly and mark them for validation.
 - **Ruthless prioritization.** Make trade-offs explicit. If you add, say what gets deferred.
 - **Clarity is a deliverable.** If engineers can't start from your artifact, it's not done.
+- **Engineering fundamentals inform product.** Keep SoC, DRY, KISS, YAGNI, and SOLID in mind when breaking down work — avoid stories that force developers to violate them. Flag security-sensitive stories against the OWASP Top 10 so they get proper non-functional requirements.
 
 ## Frameworks
 
