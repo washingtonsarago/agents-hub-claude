@@ -9,11 +9,13 @@ const https = require('https');
 const http = require('http');
 const crypto = require('crypto');
 const { URL } = require('url');
+const { execSync } = require('child_process');
 
 const HOME = os.homedir();
 const CLAUDE_DIR = path.join(HOME, '.claude');
 const AGENTS_DIR = path.join(CLAUDE_DIR, 'agents');
 const COMMANDS_DIR = path.join(CLAUDE_DIR, 'commands');
+const CACHE_DIR = path.join(CLAUDE_DIR, '.ahc-cache');
 const LOCK_FILE = path.join(CLAUDE_DIR, '.ahc-lock.json');
 const CONFIG_FILE = path.join(CLAUDE_DIR, '.ahc-config.json');
 
@@ -86,9 +88,38 @@ function rawURL(cfg, filePath) {
   return `https://raw.githubusercontent.com/${cfg.repo}/${cfg.branch}/${filePath}`;
 }
 
+function isGitRepo(cfg) {
+  return !cfg.repo.startsWith('file://') && !cfg.repo.startsWith('http');
+}
+
+function gitRefresh(cfg) {
+  const cache = path.join(CACHE_DIR, cfg.repo.replace(/[^a-zA-Z0-9._-]/g, '_'));
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+  const url = `https://github.com/${cfg.repo}.git`;
+  const quiet = FLAGS.quiet ? '--quiet' : '';
+  try {
+    if (fs.existsSync(path.join(cache, '.git'))) {
+      execSync(`git -C "${cache}" fetch origin "${cfg.branch}" --depth=1 ${quiet}`, { stdio: FLAGS.quiet ? 'pipe' : 'inherit' });
+      execSync(`git -C "${cache}" reset --hard FETCH_HEAD ${quiet}`, { stdio: FLAGS.quiet ? 'pipe' : 'inherit' });
+    } else {
+      execSync(`git clone --depth=1 --branch "${cfg.branch}" ${quiet} "${url}" "${cache}"`, { stdio: FLAGS.quiet ? 'pipe' : 'inherit' });
+    }
+  } catch (e) {
+    throw new Error(`git fetch failed for ${cfg.repo}@${cfg.branch}: ${e.message}`);
+  }
+  return cache;
+}
+
+async function readFromSource(cfg, filePath, cachePath) {
+  if (cachePath) {
+    return fs.readFileSync(path.join(cachePath, filePath), 'utf8');
+  }
+  return await fetchURL(rawURL(cfg, filePath));
+}
+
 function sha256(s) { return crypto.createHash('sha256').update(s).digest('hex'); }
 
-async function syncCategory(cat, manifest, lock, cfg) {
+async function syncCategory(cat, manifest, lock, cfg, cachePath) {
   const items = manifest[cat.manifestKey] || [];
   if (items.length === 0) return { added: 0, updated: 0, skipped: 0, pinned: 0 };
 
@@ -108,7 +139,7 @@ async function syncCategory(cat, manifest, lock, cfg) {
     }
     if (current && current.sha256 === item.sha256 && fs.existsSync(target)) { skipped++; continue; }
 
-    const body = await fetchURL(rawURL(cfg, item.path));
+    const body = await readFromSource(cfg, item.path, cachePath);
     const got = sha256(body);
     if (got !== item.sha256) {
       err(`[ahc] hash mismatch for ${cat.label} ${item.name}: expected ${item.sha256}, got ${got}`);
@@ -126,10 +157,17 @@ async function syncCategory(cat, manifest, lock, cfg) {
 async function cmdSync() {
   const cfg = loadConfig();
   const lock = loadLock();
+
+  let cachePath = null;
   let manifest;
   try {
-    const raw = await fetchURL(rawURL(cfg, 'manifest.json'));
-    manifest = JSON.parse(raw);
+    if (isGitRepo(cfg)) {
+      cachePath = gitRefresh(cfg);
+      manifest = JSON.parse(fs.readFileSync(path.join(cachePath, 'manifest.json'), 'utf8'));
+    } else {
+      const raw = await fetchURL(rawURL(cfg, 'manifest.json'));
+      manifest = JSON.parse(raw);
+    }
   } catch (e) {
     err(`[ahc] offline or unreachable (${e.message}) — keeping local cache`);
     process.exit(FLAGS.quiet ? 0 : 1);
@@ -137,7 +175,7 @@ async function cmdSync() {
 
   const totals = { added: 0, updated: 0, skipped: 0, pinned: 0 };
   for (const cat of CATEGORIES) {
-    const r = await syncCategory(cat, manifest, lock, cfg);
+    const r = await syncCategory(cat, manifest, lock, cfg, cachePath);
     totals.added += r.added;
     totals.updated += r.updated;
     totals.skipped += r.skipped;
@@ -154,7 +192,14 @@ async function cmdList() {
   const cfg = loadConfig();
   const lock = loadLock();
   let manifest = null;
-  try { manifest = JSON.parse(await fetchURL(rawURL(cfg, 'manifest.json'))); } catch {}
+  try {
+    if (isGitRepo(cfg)) {
+      const cachePath = gitRefresh(cfg);
+      manifest = JSON.parse(fs.readFileSync(path.join(cachePath, 'manifest.json'), 'utf8'));
+    } else {
+      manifest = JSON.parse(await fetchURL(rawURL(cfg, 'manifest.json')));
+    }
+  } catch {}
 
   console.log(`repo: ${cfg.repo}@${cfg.branch} (${cfg.channel})`);
 
