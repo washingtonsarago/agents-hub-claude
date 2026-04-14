@@ -1,11 +1,15 @@
 # agents-hub-claude
 
+> 📘 **[Guia de uso com exemplos →](docs/USAGE.md)** — o que cada agent/command faz, quando acionar, prompts prontos e fluxos combinados.
+
 Registry centralizado de **agents e commands do Claude Code** da EMS-NCTECH, com CLI própria (`ahc`) que sincroniza tudo automaticamente em cada máquina.
 
 - **Fonte da verdade:** `manifest.json` com versão e `sha256` de cada agent
 - **CLI:** `ahc` — Node zero-deps, distribuída via `install.sh`
 - **Auto-update:** hook `SessionStart` do Claude Code roda `ahc sync` a cada sessão
 - **Destino dos arquivos:** `~/.claude/agents/` (agents) e `~/.claude/commands/` (slash commands)
+
+> **Como usar cada agent/command?** Veja o **[Guia de uso com exemplos →](docs/USAGE.md)** — o que cada um faz, quando acionar, prompts prontos e fluxos combinados.
 
 ---
 
@@ -284,6 +288,8 @@ Slash commands instalados em `~/.claude/commands/` — invoque com `/<nome>`:
 | `/onboard-dev` | Gerar `ONBOARDING.md` completo pra novos devs do projeto |
 | `/smart-commit` | Analisar diff e criar Conventional Commit com type/scope corretos |
 | `/tech-debt` | Escanear e classificar dívida técnica com plano de ação priorizado |
+
+> Detalhes, exemplos de prompt e fluxos combinados: **[docs/USAGE.md](docs/USAGE.md)**.
 
 ---
 
