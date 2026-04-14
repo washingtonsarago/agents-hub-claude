@@ -2,6 +2,20 @@
 
 > 📘 **[Guia de uso com exemplos →](docs/USAGE.md)** — o que cada agent/command faz, quando acionar, prompts prontos e fluxos combinados.
 
+## Objetivo
+
+Padronizar e distribuir, de forma automática, o time de **agents e slash commands do Claude Code** usados pela engenharia da EMS-NCTECH. O hub existe para que:
+
+- **Todo dev tenha o mesmo ferramental** — os mesmos agents (Go, .NET, React, DBA, DevOps, Arquitetura, PO, QA…) e os mesmos commands (`/code-review`, `/smart-commit`, `/discovery`, `/arch-design`, etc.) instalados, versionados e atualizados sem esforço manual.
+- **As boas práticas virem código** — convenções, checklists de review, templates de ADR e fluxos de discovery ficam versionados no repo, não em wikis esquecidas.
+- **A curva de onboarding caia** — um dev novo roda `install.sh` uma vez e passa a ter o mesmo "time sênior virtual" que o resto da engenharia já usa no dia a dia.
+- **As atualizações cheguem sozinhas** — o hook `SessionStart` roda `ahc sync` a cada sessão, então melhorias feitas aqui chegam a todos na próxima vez que abrirem o Claude Code, sem ninguém precisar lembrar de dar pull.
+- **Haja uma fonte única da verdade** — `manifest.json` com versão + `sha256` por item, garantindo integridade e rastreabilidade das mudanças.
+
+Em resumo: **menos tempo configurando Claude Code, mais tempo entregando software com qualidade consistente entre squads.**
+
+---
+
 Registry centralizado de **agents e commands do Claude Code** da EMS-NCTECH, com CLI própria (`ahc`) que sincroniza tudo automaticamente em cada máquina.
 
 - **Fonte da verdade:** `manifest.json` com versão e `sha256` de cada agent
