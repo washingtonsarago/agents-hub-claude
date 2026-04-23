@@ -9,17 +9,20 @@ $ARGUMENTS
 
 ### Step 0 — Convention Discovery (mandatory, run before Step 2)
 
-Before reviewing, **learn the project's conventions** so you don't flag correct code as wrong or approve violations of an internal standard.
+Before reviewing, **learn what the project considers correct**. Arrive with zero assumptions: no preference for specific frameworks, libraries, layering, or error-handling strategies. You're going to review the change against the project's own standards, not a generic checklist.
 
 Inspect:
-1. **`CLAUDE.md`** (project root or nearest parent) — authoritative conventions. Rules here override the defaults in Step 2.
-2. **Manifest files** (`*.csproj`, `Directory.Packages.props`, `package.json`, `go.mod`, `requirements.txt`, `pyproject.toml`) — internal/corporate packages (e.g., `NCTech.*`, scoped `@company/*`, private feeds) usually ship opinionated abstractions. Treat them as first-class, not as things to replace.
-3. **Folder layout** — folders like `Extensions/`, `Handlers/`, `BizService/`, `Dispatchers/`, `Messages/`, `Mapping/`, `domain/`, `usecases/` signal the team's chosen architecture.
-4. **Representative files (2–3 per layer)** — read one controller/handler, one service, one repository, one mapping file, one entity base. Infer: CQRS style, error envelope, mapping location, i18n/message system, deletion policy (soft vs physical), concurrency control (`RowVersion`/`If-Match`), layer chain, validation library conventions.
+1. **`CLAUDE.md`** (project root or nearest parent) — authoritative conventions. Rules here override any default you'd otherwise apply.
+2. **Manifests** (`*.csproj`, `Directory.Packages.props`, `package.json`, `go.mod`, `requirements.txt`, `pyproject.toml`, etc.) — every referenced package is a deliberate choice, especially private/internal ones. Packages that ship their own abstractions (dispatchers, middleware, base classes, messaging, validation) define how the stack expects code to be written. Don't suggest replacing them.
+3. **Folder layout** — infer the team's architecture from whatever folder names they use. Open folders to learn their purpose instead of pattern-matching on names.
+4. **Representative files (2–3 per layer)** — read one controller/handler, one service, one repository, one mapping file, one entity base (if applicable). Answer: what pattern does the project use for CQRS (if any), error envelope, mapping, user-facing messages, deletion, optimistic concurrency, layering, validation?
 
-Apply two rules during review:
-- **Project convention > generic best practice.** If the codebase uses a custom dispatcher, `ResponseBase<T>` middleware, `Extensions/*Extensions.cs` mapping, `INCMessageService`/MODULE-NNN codes, soft delete via `IsDeleted`, or `RowVersion` + `If-Match`, then the code under review **must** follow those. Deviations are findings.
-- **Don't flag code for not matching mainstream defaults** when the project has chosen a different, consistent path. E.g., `WithMessage(EbrMessageCodes.X)` in FluentValidation is correct if messages are resolved via a message service; verbose extension-method mapping is correct if `AutoMapper`/`Mapster` are explicitly banned by the stack.
+Extract the **actual names, types, and patterns the project uses** and refer to those when flagging findings. Do not inject names from other stacks.
+
+Apply these rules during review:
+- **Project convention > generic best practice.** Whatever pattern the codebase consistently uses is the standard to review against. Deviations are findings, regardless of whether the deviation "looks fine" in generic terms.
+- **Don't flag correct code as wrong.** If the project uses a validation-message constant, a custom error envelope, manual/extension-method mapping, a specific deletion policy, a specific concurrency scheme, or a specific layer chain, code that follows the convention is correct — do not suggest mainstream alternatives to replace it.
+- **Don't approve silent violations.** If the project's convention exists and the change ignores it, that's a finding — classify by severity of the real impact (data loss, silent concurrency bugs, missing audit).
 - **When no convention is detectable**, fall back to Step 2 defaults and mention the ambiguity in the summary.
 
 ### Step 1 — Identify what to review
@@ -59,15 +62,15 @@ Apply two rules during review:
 - Inconsistent naming conventions
 - Dead code or unused imports
 
-**Project Convention Compliance (severity follows the violation)** — anchored in Step 0 discovery
-- Mapping performed outside the project's designated location (e.g., inside services/handlers when the convention is `Extensions/{Entity}Extensions.cs`)
-- Physical `Remove()` when the entity base supports soft delete (`IsDeleted`)
-- Update/delete paths that don't validate optimistic concurrency (`RowVersion` / `If-Match`) when the stack exposes it
-- Hardcoded user-facing strings when the project uses a message service with MODULE-NNN codes
-- Skipping the mandated service chain (e.g., Handler accessing Repository directly when the chain requires `BizService → EntityService → Repository`)
-- Introducing a library already covered by an internal package (e.g., adding MediatR/AutoMapper/ProblemDetails when the stack already provides equivalents)
-- Missing base calls required by the stack (e.g., `base.OnModelCreating(modelBuilder)` where the base configures audit/concurrency fields)
-- Queries that don't filter `IsDeleted` when the entity model uses soft delete
+**Project Convention Compliance (severity follows the real impact of the violation)** — anchored in Step 0 discovery. Only raise a finding when the project has an observable convention the change violates. Examples of shapes this can take:
+- Mapping done outside the location the rest of the codebase uses
+- Physical delete when the entity base (and every other usage in the project) indicates soft delete
+- Update/delete paths that skip the optimistic-concurrency check used everywhere else in the codebase
+- Hardcoded user-facing strings when other code routes messages through a dedicated service
+- Skipping a layer the rest of the codebase consistently goes through
+- Introducing a third-party library to do what a referenced internal/private package already does
+- Missing required base-class calls in framework configuration when the base class depends on them
+- Queries that don't apply a filter consistently applied elsewhere (e.g., an "is deleted" flag)
 
 **Testing (WARNING)**
 - New logic without corresponding tests
@@ -121,5 +124,5 @@ How to fix it, with code example if helpful.
 - Don't nitpick formatting if there's a linter
 - Praise good patterns — reviews aren't just about problems
 - If reviewing Go: check error handling, goroutine leaks, defer usage
-- If reviewing .NET: check async/await patterns, IDisposable, null safety — and any stack-specific invariants surfaced during Step 0 (soft delete, RowVersion, message service, mapping location, mandated service chain)
+- If reviewing .NET: check async/await patterns, IDisposable, null safety — and any stack-specific invariants surfaced during Step 0 (whatever the project uses for deletion, concurrency, messaging, mapping, layering)
 - If reviewing React: check accessibility, re-renders, server vs client state

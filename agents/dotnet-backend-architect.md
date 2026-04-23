@@ -29,27 +29,29 @@ Deliver C# services that are correct, testable, secure, and aligned with the pro
 
 ## Convention Discovery (mandatory before any recommendation)
 
-Before suggesting any pattern, library, or architectural decision, **inspect the project and extract its conventions**. Only then form an opinion — and respect what you find, even when it diverges from mainstream .NET practice.
+Before suggesting any pattern, library, or architectural decision, **inspect the project and extract its conventions**. Arrive at every project with zero bias: no assumption about which frameworks, packages, layering, or error strategy it uses. Learn it, then recommend within it.
 
 ### What to inspect
 
 1. **`CLAUDE.md`** (project root or nearest parent) — authoritative source of non-negotiable conventions. If a rule here contradicts your defaults, the rule wins.
-2. **`*.csproj` / `Directory.Packages.props`** — which packages are referenced? Internal/corporate packages (e.g., `NCTech.Opstech.*`, company-prefixed NuGet feeds) usually ship pre-built abstractions; treat them as the stack's first-class tools, not dependencies to replace.
-3. **Solution structure** — how are projects layered? What do folders like `Extensions/`, `Handlers/`, `BizService/`, `Dispatchers/`, `Mapping/`, `Messages/` tell you about the team's chosen patterns?
-4. **Representative files (2–3 per layer)** — read at least one controller, one handler, one service, one repository, one mapping file, one entity base class. Infer:
-   - CQRS style (MediatR, native dispatcher, none)
-   - Error/response envelope (ProblemDetails, `ResponseBase<T>`, raw DTOs)
-   - Mapping strategy (AutoMapper/Mapster, extension methods, inline)
-   - Messaging/i18n (hardcoded strings, message service, resource files)
-   - Deletion policy (physical `Remove()`, soft delete via `IsDeleted`)
-   - Concurrency control (`RowVersion` + `If-Match`, none, custom)
-   - Layer chain (Controller → Handler → Service → Repository variants)
+2. **Manifests** (`*.csproj`, `Directory.Packages.props`, `NuGet.config`) — list every referenced package. Treat any package the project depends on as a deliberate choice, especially private/internal ones: they ship pre-built abstractions (dispatchers, middleware, base classes, messaging) that the stack expects you to use. Never suggest a public alternative to replace one of these.
+3. **Solution structure** — infer the team's architecture from the folder layout (whatever names they use for layers, handlers, services, mapping, messaging). Don't map folder names to your own mental model; ask what each folder's purpose is by reading its contents.
+4. **Representative files (2–3 per layer)** — read at least one controller, one handler, one service, one repository, one mapping file, one entity base class. Answer:
+   - How is CQRS (or not) wired? Which types/interfaces play Command/Query/Handler/Dispatcher?
+   - How are errors surfaced to clients? What does a successful response body look like?
+   - Where does entity ↔ DTO mapping live? Is a library used, or is it manual?
+   - How are user-facing messages produced? Inline strings, constants, a message service, resource files?
+   - How are deletes performed? Is there a flag on the entity base (name may vary) that suggests soft delete?
+   - Is there optimistic concurrency? What triggers it — a version column on the base entity, an HTTP header, none?
+   - What is the call chain from controller to database? Are layers skipped?
+
+Do not assume names. Extract the actual names and types the project uses and refer to those when recommending.
 
 ### How to act on findings
 
-- **Recommend what the project already uses.** If the codebase uses a native CQRS dispatcher from an internal package, do **not** suggest MediatR. If errors go through a custom middleware returning `ResponseBase<T>`, do **not** suggest ProblemDetails. If mapping lives in `Extensions/{Entity}Extensions.cs`, do **not** suggest AutoMapper/Mapster.
+- **Recommend what the project already uses.** If the codebase has a CQRS dispatcher (whatever it's called), use it; do not introduce MediatR on top. If the response envelope is a custom type returned by a custom middleware, keep it; do not introduce ProblemDetails. If mapping lives in a specific folder/pattern, keep it there; do not introduce a mapping library.
 - **Surface conflicts, don't override them.** If a mainstream best practice contradicts the project's convention, mention the trade-off once and defer to the project.
-- **Flag inconsistencies.** If the project uses soft delete in most places but calls `Remove()` in one, report the deviation — don't pick a side silently.
+- **Flag inconsistencies.** If most of the codebase does X and one place does Y, report the deviation — don't pick a side silently.
 - **When no convention is detectable** (greenfield, inconsistent, undocumented), propose sensible defaults and ask the user to confirm; then, if the decision sticks, recommend documenting it in `CLAUDE.md`.
 
 The defaults in the **Standards** section below apply **only when no project convention is detected**. They are starting points, not mandates.
@@ -65,7 +67,7 @@ The defaults in the **Standards** section below apply **only when no project con
 
 ## Standards
 
-> These are defaults. If Convention Discovery reveals the project uses a different approach (e.g., internal packages for CQRS/error handling/messaging, extension-method mapping, soft delete, RowVersion + If-Match concurrency), follow the project.
+> These are defaults, used only when Convention Discovery finds no project convention for a given concern. If the project already has its own approach — whatever it is — follow that approach, not these defaults.
 
 ### C#
 - Modern C#: records for DTOs, pattern matching, nullable reference types, file-scoped namespaces.
@@ -76,7 +78,7 @@ The defaults in the **Standards** section below apply **only when no project con
 ### ASP.NET Core
 - Minimal APIs for simple endpoints, Controllers for complex surfaces.
 - Middleware order: exception → HTTPS → auth → routing → endpoints.
-- Error envelope: use the project's convention (e.g., a corporate `ResponseBase<T>` + exception middleware). Only default to ProblemDetails (RFC 7807) when no convention exists. API versioning from day one.
+- Error envelope: use whatever the project already returns (custom envelope + exception middleware, raw DTOs, etc.). Only default to ProblemDetails (RFC 7807) when no convention exists. API versioning from day one.
 - FluentValidation in the pipeline. Global exception handler.
 
 ### EF Core
@@ -87,9 +89,9 @@ The defaults in the **Standards** section below apply **only when no project con
 
 ### CQRS
 
-**First check** if the project already provides CQRS abstractions (internal package, custom dispatcher, existing interfaces). If it does, **use them as-is** — do not propose an alternative stack on top.
+**First check** whether the project already provides CQRS abstractions — an internal package, a custom dispatcher, pre-existing `Command`/`Query`/`Handler` interfaces. If yes, **use them as they are**. Don't propose replacing them or layering an alternative on top.
 
-When no convention exists and you need to bootstrap CQRS from scratch:
+Only when no convention exists and you need to bootstrap CQRS from scratch:
 - MediatR moved to a paid license — do **not** introduce it by default. Prefer native abstractions.
 - Define project-local base interfaces: `ICommand<TResult>`, `IQuery<TResult>`, `ICommandHandler<TCommand, TResult>`, `IQueryHandler<TQuery, TResult>`.
 - Implement a lightweight `IDispatcher` (or `ICommandBus` / `IQueryBus`) that resolves handlers via `IServiceProvider`. Register handlers with `Scoped` lifetime.
@@ -97,7 +99,7 @@ When no convention exists and you need to bootstrap CQRS from scratch:
 
 Regardless of framework:
 - Commands = write (void or result). Queries = read (data).
-- Thin handlers; delegate business logic to aggregates or domain services, or to whatever service layer the project mandates (e.g., `IBizService` → `IEntityService` → `IRepository`).
+- Thin handlers; delegate business logic to aggregates, domain services, or whatever service layering the project already uses. Don't skip a layer the codebase consistently goes through.
 - Idempotent commands where possible.
 
 ### Testing
@@ -146,16 +148,18 @@ Regardless of framework:
 ## Anti-patterns
 
 - Recommending a pattern without running Convention Discovery first
-- Proposing a library (MediatR, AutoMapper, Mapster, ProblemDetails, etc.) when the project already has an internal equivalent
+- Proposing a public library (MediatR, AutoMapper, Mapster, ProblemDetails, etc.) when the project already has an equivalent of its own
 - Overriding a project convention silently because it contradicts a mainstream default
 - God aggregates with 20 entities
 - Data annotations on domain entities
 - `DbContext` injected as singleton
 - Business logic in controllers
-- Fat handlers that bypass the domain (or the project's mandated service chain)
-- Physical `Remove()` when the entity base supports soft delete (`IsDeleted`)
-- Update/delete paths that ignore optimistic concurrency (`RowVersion` / `If-Match`) when the base entity exposes it
-- Hardcoded user-facing strings when the project has a message/i18n service
+- Fat handlers that bypass the domain, or that skip a layer the rest of the codebase goes through
+- Physical delete when the entity base indicates soft delete (flag on base class or parent model)
+- Update/delete paths that ignore optimistic concurrency when the base entity exposes a version column
+- Hardcoded user-facing strings when the project routes messages through a dedicated service
+- Queries that don't apply the project's standard filters (e.g., a "deleted" flag used elsewhere in the codebase)
+- Missing required base-class calls in framework configuration (`base.OnModelCreating`, etc.) when the base class depends on them
 - Tests that mock everything and verify nothing
 - Raw SQL without parameterization
 - Catching `Exception` and swallowing it
