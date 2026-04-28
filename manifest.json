@@ -1,7 +1,7 @@
 {
   "version": 1,
   "channel": "stable",
-  "updated_at": "2026-05-02",
+  "updated_at": "2026-05-05",
   "repo": "EMS-NCTECH/agents-hub-claude",
   "agents": [
     {
@@ -91,6 +91,14 @@
       "sha256": "7ebc74bc3a1c5e46d09a90640dc961a254094db46a7b8afca3f759ce2f7417b2",
       "scope": "user",
       "description": "AppSec/DevSecOps — OWASP Top 10, CWE Top 25, STRIDE, secret + dep audit, release gate"
+    },
+    {
+      "name": "senior-product-designer",
+      "version": "1.0.0",
+      "path": "agents/senior-product-designer.md",
+      "sha256": "448c8cb8de3a8670bb3b4976b5cb4282ac22d256734852d574de95fd41badac1",
+      "scope": "user",
+      "description": "UX strategy & product design — discovery, IA, journey, heuristics, a11y, design system"
     },
     {
       "name": "senior-product-owner",
