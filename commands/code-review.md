@@ -83,38 +83,38 @@ Apply these rules during review:
 Format each finding as:
 
 ```
-### [BLOCKER|WARNING|INFO] Title
-**File:** `path/to/file:line`
-**Category:** Security | Correctness | Performance | Maintainability | Testing
+### [BLOCKER|WARNING|INFO] Título
+**Arquivo:** `path/to/file:line`
+**Categoria:** Security | Correctness | Performance | Maintainability | Testing
 
-**Problem:**
-Brief description of the issue.
+**Problema:**
+Descrição curta do issue.
 
-**Suggestion:**
-How to fix it, with code example if helpful.
+**Sugestão:**
+Como corrigir, com exemplo de código quando ajudar.
 ```
 
 ### Step 4 — Summary
 
 ```markdown
-## Code Review Summary
+## Resumo da Revisão
 
-| Category | BLOCKER | WARNING | INFO |
-|----------|---------|---------|------|
+| Categoria | BLOCKER | WARNING | INFO |
+|-----------|---------|---------|------|
 | Security | X | X | X |
 | Correctness | X | X | X |
 | Performance | X | X | X |
 | Maintainability | X | X | X |
 | Testing | X | X | X |
 
-### Verdict
-- [ ] **APPROVED** — Ship it
-- [ ] **APPROVED WITH COMMENTS** — Minor issues, can merge after addressing
-- [ ] **CHANGES REQUESTED** — Must fix blockers before merge
-- [ ] **NEEDS DISCUSSION** — Architectural concerns to resolve
+### Veredicto
+- [ ] **APPROVED** — pode mergear
+- [ ] **APPROVED WITH COMMENTS** — issues menores, dá pra mergear depois de endereçar
+- [ ] **CHANGES REQUESTED** — precisa corrigir os blockers antes do merge
+- [ ] **NEEDS DISCUSSION** — preocupações arquiteturais a resolver
 
-### What's good
-[Highlight 2-3 things done well — good patterns, clean abstractions, thorough tests]
+### O que está bom
+[Destaque 2–3 coisas bem feitas — bons padrões, abstrações limpas, testes minuciosos]
 ```
 
 ### Rules

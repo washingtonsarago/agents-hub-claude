@@ -120,17 +120,17 @@
   "commands": [
     {
       "name": "api-contract",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "commands/api-contract.md",
-      "sha256": "b24d8904ebb7345bc2a8c8e4b1290dbe930b1f98ee7e71db6af7d3149fdd12c2",
+      "sha256": "8c0d55e1eb16574c459be562a13f6ed21a12d725cd04b57552f5f5b425b387a2",
       "scope": "user",
       "description": "Generate OpenAPI spec or validate contracts between services"
     },
     {
       "name": "arch-design",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "commands/arch-design.md",
-      "sha256": "9c00aa3c656d6dcab165c5b80448c68aff64070d569bf9eb2f71141fe76e77b0",
+      "sha256": "5fba993e6333dae52fcbdd82f00d43e7af4223123e17a2fa620014c1032c6c6b",
       "scope": "user",
       "description": "Architecture design — C4 diagrams, ADRs, trade-off analysis"
     },
@@ -152,25 +152,25 @@
     },
     {
       "name": "code-review",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "path": "commands/code-review.md",
-      "sha256": "b6328b0cdc0499752b9f65d266b446fd6ad6a2cb631b366091be748ac670df1f",
+      "sha256": "89ceec944656ecd012791b1ba02427bd9a8c3c7d95142deddf7408adb80edef3",
       "scope": "user",
       "description": "PR or diff review — security, correctness, performance, testing"
     },
     {
       "name": "db-audit",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "commands/db-audit.md",
-      "sha256": "146f8cfd2b7b64a696fd9ef5021cd8d4070d94a2ba8d30b4a9ed2dc393da9e12",
+      "sha256": "945218c5aad547776e3b8d6003c94957c610154a0850f22c088f068f7acf0023",
       "scope": "user",
       "description": "Database audit — schema, indexes, FKs, migrations, queries, security"
     },
     {
       "name": "discovery",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "commands/discovery.md",
-      "sha256": "51077341fc416caf0f86ac3f06e49c4f8501e776b1fdebf3ee143b39e5ddf5a3",
+      "sha256": "52cc409bce908a760efcdfe8a4a0bae7621e436688a38fd4c085a68f3e97fab4",
       "scope": "user",
       "description": "Product discovery — problem framing, JTBD, assumptions, experiments, go/no-go"
     },
@@ -192,9 +192,9 @@
     },
     {
       "name": "jira-story",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "commands/jira-story.md",
-      "sha256": "b63552c01487e34f1c88a7f9041cfabade742fd33fa7da2e57dc40db5ee79dbc",
+      "sha256": "b027f9bf39620b86fad07436a7e7a0aee7de93b91bf6edde77f84cfbecc029d2",
       "scope": "user",
       "description": "Draft or refine Jira user stories with acceptance criteria and test scenarios"
     },
@@ -208,25 +208,25 @@
     },
     {
       "name": "onboard-dev",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "commands/onboard-dev.md",
-      "sha256": "9fd41d467b81095ef8c17f0cf7be81c77e30b60ac89fd8354227c83604f84457",
+      "sha256": "6819f10cd88b45295046b722049d5fa17d8d632116cb9e2cb4975602d00115b7",
       "scope": "user",
       "description": "Generate a comprehensive ONBOARDING.md for new developers"
     },
     {
       "name": "smart-commit",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "commands/smart-commit.md",
-      "sha256": "1cfea3c1adb02548ac5e8d2fcbdf794747ba19ddfd5067c1ebedff2c1976d7b7",
+      "sha256": "f5b7fc76ed6b735849f5ca4d9bb0175848e24cfbd3b8bc462ea0d4ed65181238",
       "scope": "user",
       "description": "Analyze diff and create a Conventional Commit with proper type/scope"
     },
     {
       "name": "tech-debt",
-      "version": "1.1.0",
+      "version": "1.1.1",
       "path": "commands/tech-debt.md",
-      "sha256": "fd43d08d086643f1301c459966fa24467f69c16e655199183127dfd1d5af12f3",
+      "sha256": "82d97435c08330715d14ced94e1d3a04a7ca73342c9f33956670fe10bdca199d",
       "scope": "user",
       "description": "Scan and classify technical debt with prioritized action plan"
     }

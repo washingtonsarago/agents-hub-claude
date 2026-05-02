@@ -97,28 +97,28 @@ End with a clear recommendation:
 Save the discovery brief as `docs/discovery/{slug}.md` in the project, using:
 
 ```markdown
-# Discovery: {title}
-**Date:** {date} | **Facilitator:** {name} | **Status:** Exploring | Validated | Archived
+# Discovery: {título}
+**Data:** {data} | **Facilitador:** {nome} | **Status:** Exploring | Validated | Archived
 
 ## Problem Statement
-{one sentence from Step 1}
+{frase única do Step 1}
 
-## Affected users
-{table from Step 2}
+## Usuários afetados
+{tabela do Step 2}
 
-## Desired outcome
-{JTBD + metric from Step 3}
+## Outcome desejado
+{JTBD + métrica do Step 3}
 
-## Assumptions & Risks
-{table from Step 4}
+## Premissas & Riscos
+{tabela do Step 4}
 
-## Experiments
-{table from Step 5}
+## Experimentos
+{tabela do Step 5}
 
-## Recommendation
-{Go / No-go / Learn more — with rationale}
+## Recomendação
+{Go / No-go / Learn more — com justificativa}
 
-## Next steps
+## Próximos passos
 - [ ] ...
 ```
 

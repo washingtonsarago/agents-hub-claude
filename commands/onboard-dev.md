@@ -19,100 +19,100 @@ Analyze the current project thoroughly:
 ### Step 2 — Generate Onboarding Guide
 
 ```markdown
-# Developer Onboarding — {project-name}
+# Onboarding do Dev — {project-name}
 
-## Quick Start (Get running in 15 minutes)
+## Início rápido (rodar em 15 minutos)
 
-### Prerequisites
-- [ ] {language/runtime} installed (version X.Y)
+### Pré-requisitos
+- [ ] {linguagem/runtime} instalado (versão X.Y)
 - [ ] Docker + Docker Compose
-- [ ] {tool} installed
-- [ ] Access to GitHub org {org}
-- [ ] VPN/credentials for {env}
+- [ ] {tool} instalado
+- [ ] Acesso à org GitHub {org}
+- [ ] VPN/credenciais pra {env}
 
 ### Setup
 1. Clone: `git clone {repo-url}`
-2. Install deps: `{install-command}`
-3. Start infra: `docker compose up -d`
-4. Run migrations: `{migration-command}`
-5. Start app: `{run-command}`
-6. Verify: `curl http://localhost:{port}/health`
+2. Instalar deps: `{install-command}`
+3. Subir infra: `docker compose up -d`
+4. Rodar migrations: `{migration-command}`
+5. Subir app: `{run-command}`
+6. Verificar: `curl http://localhost:{port}/health`
 
-## Architecture Overview
+## Visão geral da arquitetura
 
-### Tech Stack
-| Layer | Technology |
-|-------|-----------|
-| Language | ... |
+### Stack
+| Camada | Tecnologia |
+|--------|-----------|
+| Linguagem | ... |
 | Framework | ... |
-| Database | ... |
+| Banco | ... |
 | Cache | ... |
-| Messaging | ... |
+| Mensageria | ... |
 | Auth | ... |
 
-### Project Structure
-{annotated tree with descriptions of each directory}
+### Estrutura do projeto
+{árvore comentada com descrição de cada pasta}
 
-### Key Files to Read First
-1. `{file}` — {why it's important}
-2. `{file}` — {why it's important}
-3. `{file}` — {why it's important}
+### Arquivos pra ler primeiro
+1. `{file}` — {por que importa}
+2. `{file}` — {por que importa}
+3. `{file}` — {por que importa}
 
-## Domain Concepts
-{Explain the core business domain in simple terms}
-- **{Concept A}**: what it is, how it's modeled
-- **{Concept B}**: what it is, how it's modeled
+## Conceitos do domínio
+{Explique o domínio de negócio em termos simples}
+- **{Conceito A}**: o que é, como é modelado
+- **{Conceito B}**: o que é, como é modelado
 
-## Critical Flows
-{Describe the 3 most important user/system flows}
+## Fluxos críticos
+{Descreva os 3 fluxos mais importantes do sistema}
 
-### Flow 1: {name}
-{Mermaid sequence diagram}
+### Fluxo 1: {nome}
+{Diagrama de sequência em Mermaid}
 
-## Database Schema
-{Simplified ER diagram in Mermaid}
+## Schema do banco
+{Diagrama ER simplificado em Mermaid}
 
-## API Endpoints
-| Method | Path | Description |
-|--------|------|-------------|
+## Endpoints da API
+| Método | Path | Descrição |
+|--------|------|-----------|
 | GET | /api/... | ... |
 
-## Environment Variables
-| Variable | Required | Description | Example |
-|----------|----------|-------------|---------|
-| ... | Yes/No | ... | ... |
+## Variáveis de ambiente
+| Variável | Obrigatória | Descrição | Exemplo |
+|----------|-------------|-----------|---------|
+| ... | Sim/Não | ... | ... |
 
-## Development Workflow
-1. Create branch from `main`: `git checkout -b feat/XX-description`
-2. Make changes
-3. Run tests: `{test-command}`
-4. Commit: follow Conventional Commits
-5. Push and create PR
-6. Get review from {reviewer}
-7. Merge after CI passes
+## Fluxo de desenvolvimento
+1. Crie branch a partir de `main`: `git checkout -b feat/XX-descricao`
+2. Faça as mudanças
+3. Rode os testes: `{test-command}`
+4. Commit: siga Conventional Commits
+5. Push e abra PR
+6. Peça review do {reviewer}
+7. Merge após CI passar
 
-## Common Tasks
-- **Add a new endpoint:** {where to add, pattern to follow}
-- **Add a migration:** {command, naming convention}
-- **Add a test:** {where tests live, how to run}
-- **Debug locally:** {tools, tips}
+## Tarefas comuns
+- **Adicionar um endpoint:** {onde colocar, padrão a seguir}
+- **Adicionar uma migration:** {comando, convenção de nome}
+- **Adicionar um teste:** {onde ficam os testes, como rodar}
+- **Debug local:** {ferramentas, dicas}
 
 ## Troubleshooting
-| Problem | Solution |
-|---------|----------|
-| "too many connections" | Check DB pool size in config |
-| Tests timeout | Ensure Docker infra is running |
-| Auth fails locally | Check Keycloak is up on :8080 |
+| Problema | Solução |
+|----------|---------|
+| "too many connections" | Verifique o pool size do DB no config |
+| Testes dando timeout | Confira se o Docker da infra está rodando |
+| Auth falha localmente | Verifique se o Keycloak está no :8080 |
 
-## Team Contacts
-| Role | Name | When to ask |
-|------|------|-------------|
-| Tech Lead | ... | Architecture decisions |
-| PO | ... | Requirements, priorities |
-| DBA | ... | Schema changes, queries |
+## Contatos do time
+| Papel | Nome | Quando perguntar |
+|-------|------|------------------|
+| Tech Lead | ... | Decisões de arquitetura |
+| PO | ... | Requisitos, prioridades |
+| DBA | ... | Mudanças de schema, queries |
 
-## Useful Links
-- Jira Board: {url}
+## Links úteis
+- Board do Jira: {url}
 - Confluence: {url}
 - Monitoring: {url}
 - Staging: {url}
@@ -120,3 +120,5 @@ Analyze the current project thoroughly:
 
 ### Step 3 — Save
 Save the guide as `docs/ONBOARDING.md` in the project root.
+
+> Note: the template above is what gets written to the user's repo, so it stays in PT-BR. The instructions on this page (steps 1-3) remain in EN since they brief Claude.

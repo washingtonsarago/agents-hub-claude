@@ -18,13 +18,13 @@ Analyze all pending changes and create a well-structured commit following Conven
 
 5. Commit format:
 ```
-<type>(<scope>): <imperative description>
+<type>(<scope>): <descrição no imperativo>
 
-<optional body with change details>
+<corpo opcional com detalhes da mudança>
 
-<footer with breaking changes or references>
+<footer com breaking changes ou referências>
 
-Co-Authored-By: Claude Opus 4.6 (1M context) <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 ```
 
 6. **Rules:**

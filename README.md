@@ -417,7 +417,7 @@ Para manter o hub coerente, todo agent ou command novo segue:
 - **User-facing (output que o usuário lê / textos que o agent fala de volta) → português.** Mensagens, perguntas, exemplos de prompt no `description`, templates de relatório que o agent vai exibir pro dev brasileiro — em PT-BR.
 - **Docs do hub (`README.md`, `docs/USAGE.md`) → português.** Audiência são os devs da EMS-NCTECH.
 
-> Os commands antigos foram escritos antes dessa regra ficar explícita e podem ter output em inglês — vão ser migrados em sweep separado. Commands novos (`/feature-flow`, `/bug-flow`, `/bootstrap-project`) já seguem.
+> Status: todos os commands seguem essa regra hoje (sweep PT-BR concluído em 2026-05-02). Termos técnicos (BLOCKER, WARNING, CRITICAL, OWASP, ADR, JTBD, INVEST, sync, push) ficam em EN intencionalmente — são jargão.
 
 ### Frontmatter (agents)
 

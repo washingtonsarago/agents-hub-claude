@@ -32,9 +32,9 @@ info:
   description: {description}
 servers:
   - url: http://localhost:{port}
-    description: Local development
+    description: Desenvolvimento local
   - url: https://{service}.qa.gruponc.net.br
-    description: QA environment
+    description: Ambiente QA
 paths:
   /api/{resource}:
     get:
@@ -83,19 +83,19 @@ If the user specifies two services (e.g., `/api-contract estoque vs localidade`)
 4. Generate a **Contract Compatibility Report**:
 
 ```markdown
-## Contract Validation: {Service A} → {Service B}
+## Validação de contrato: {serviço A} → {serviço B}
 
 ### Endpoint: GET /v1/localidade/distribuidores/elegiveis
 
-| Field | Client expects | Server returns | Compatible |
-|-------|---------------|----------------|------------|
-| cnpj | string | string | YES |
-| nome | string | string | YES |
-| pdvAtivoIntegracao | bool | bool | YES |
-| newField | - | string | WARN: client ignores |
-| removedField | string | - | BREAK: client expects |
+| Campo | Cliente espera | Servidor retorna | Compatível |
+|-------|----------------|------------------|------------|
+| cnpj | string | string | SIM |
+| nome | string | string | SIM |
+| pdvAtivoIntegracao | bool | bool | SIM |
+| newField | - | string | WARN: cliente ignora |
+| removedField | string | - | BREAK: cliente espera |
 
-### Verdict: {COMPATIBLE | WARNING | BREAKING}
+### Veredicto: {COMPATIBLE | WARNING | BREAKING}
 ```
 
 ### Mode 3 — Generate Postman Collection

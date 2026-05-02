@@ -20,39 +20,39 @@ $ARGUMENTS
 
 ```markdown
 ## User Story
-**As a** [persona/role]
-**I want** [action/feature]
-**So that** [benefit/value]
+**Como** [persona/papel]
+**Quero** [ação/feature]
+**Para que** [benefício/valor]
 
-## Description
-[Business context and motivation — 2-3 paragraphs]
+## Descrição
+[Contexto de negócio e motivação — 2-3 parágrafos]
 
-## Acceptance Criteria
-- [ ] AC-01: [verifiable criterion]
-- [ ] AC-02: [verifiable criterion]
-- [ ] AC-03: [verifiable criterion]
+## Critérios de Aceite
+- [ ] AC-01: [critério verificável]
+- [ ] AC-02: [critério verificável]
+- [ ] AC-03: [critério verificável]
 
-## Technical Refinement
-### Impacted files
-- `path/to/file.go` — [what changes]
-- `path/to/migration.sql` — [new table/column]
+## Refinamento técnico
+### Arquivos impactados
+- `path/to/file.go` — [o que muda]
+- `path/to/migration.sql` — [tabela/coluna nova]
 
-### Dependencies
-- Depends on: [related issues]
-- Blocks: [issues that depend on this]
+### Dependências
+- Depende de: [issues relacionadas]
+- Bloqueia: [issues que dependem dessa]
 
-### Risks
-- [identified risk and mitigation]
+### Riscos
+- [risco identificado e mitigação]
 
-## Test Scenarios
-| # | Scenario | Given | When | Then |
-|---|----------|-------|------|------|
+## Cenários de teste
+| # | Cenário | Given | When | Then |
+|---|---------|-------|------|------|
 | 1 | Happy path | ... | ... | ... |
-| 2 | Expected error | ... | ... | ... |
+| 2 | Erro esperado | ... | ... | ... |
 
-## Estimation
+## Estimativa
 - **Story Points:** [1/2/3/5/8/13]
-- **Complexity:** [Low/Medium/High]
+- **Complexidade:** [Baixa/Média/Alta]
 ```
 
 4. **If Jira access is available**, use Atlassian tools to:

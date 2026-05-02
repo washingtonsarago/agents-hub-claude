@@ -41,18 +41,18 @@ $ARGUMENTS
 3. Produce an **ADR (Architecture Decision Record)** for any design decisions:
 
 ```markdown
-## ADR-{N}: {Decision Title}
+## ADR-{N}: {título da decisão}
 **Status:** Proposed | Accepted | Superseded
-**Date:** {date}
-**Context:** [Why this decision is needed]
-**Decision:** [What we decided]
-**Alternatives considered:**
-1. [Option A] — pros/cons
-2. [Option B] — pros/cons
-**Consequences:**
-- Positive: ...
-- Negative: ...
-- Risks: ...
+**Data:** {data}
+**Contexto:** [por que essa decisão é necessária]
+**Decisão:** [o que foi decidido]
+**Alternativas consideradas:**
+1. [Opção A] — prós/contras
+2. [Opção B] — prós/contras
+**Consequências:**
+- Positivas: ...
+- Negativas: ...
+- Riscos: ...
 ```
 
 ### Phase 4 — Recommendations

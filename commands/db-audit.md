@@ -72,15 +72,15 @@ $ARGUMENTS
 ### Step 3 — Generate report
 
 ```markdown
-## Database Audit Report — {project}
-**Date:** {date} | **Schema:** {schema_name}
+## Relatório de Auditoria do Banco — {projeto}
+**Data:** {data} | **Schema:** {schema_name}
 
-### Summary
-| Category | CRITICAL | HIGH | MEDIUM | LOW |
-|----------|----------|------|--------|-----|
-| Schema Design | X | X | X | X |
-| Indexes | X | X | X | X |
-| Foreign Keys | X | X | X | X |
+### Resumo
+| Categoria | CRITICAL | HIGH | MEDIUM | LOW |
+|-----------|----------|------|--------|-----|
+| Design de schema | X | X | X | X |
+| Índices | X | X | X | X |
+| Foreign keys | X | X | X | X |
 | Migrations | X | X | X | X |
 | Queries | X | X | X | X |
 | Performance | X | X | X | X |
@@ -88,19 +88,19 @@ $ARGUMENTS
 
 ### Findings
 
-#### [{SEVERITY}] {Finding title}
-- **File:** `path/to/migration.sql:42`
-- **Table:** `schema.table_name`
-- **Problem:** What is wrong
-- **Impact:** What happens if not fixed
+#### [{SEVERIDADE}] {título do achado}
+- **Arquivo:** `path/to/migration.sql:42`
+- **Tabela:** `schema.table_name`
+- **Problema:** o que está errado
+- **Impacto:** o que acontece se não for corrigido
 - **Fix:**
 ```sql
--- Suggested SQL fix
+-- SQL sugerido
 ALTER TABLE ...
 ```
 
-### Migration Fix Script
-If CRITICAL issues are found, generate a complete migration file that fixes all issues at once.
+### Script de migration corretivo
+Se houver itens CRITICAL, gere um arquivo de migration completo que corrija tudo de uma vez.
 ```
 
 ### Step 4 — Verify fixes

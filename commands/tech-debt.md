@@ -50,25 +50,25 @@ Scan the project in the current directory using Explore agents to cover:
 ### Step 3 — Generate a report in the format
 
 ```markdown
-## Technical Debt Report — {project}
-**Date:** {date} | **Files analyzed:** {N}
+## Relatório de Dívida Técnica — {projeto}
+**Data:** {data} | **Arquivos analisados:** {N}
 
-### Summary
-| Severity | Count |
-|----------|-------|
-| CRITICAL | X     |
-| HIGH     | X     |
-| MEDIUM   | X     |
-| LOW      | X     |
+### Resumo
+| Severidade | Quantidade |
+|------------|------------|
+| CRITICAL   | X          |
+| HIGH       | X          |
+| MEDIUM     | X          |
+| LOW        | X          |
 
 ### Findings
 
-#### [SEVERITY] Debt title
-- **File:** `path/to/file.go:42`
-- **Description:** What is wrong
-- **Impact:** Consequence if not fixed
-- **Suggestion:** How to resolve
-- **Effort:** S/M/L
+#### [SEVERIDADE] Título da dívida
+- **Arquivo:** `path/to/file.go:42`
+- **Descrição:** o que está errado
+- **Impacto:** consequência se não for corrigido
+- **Sugestão:** como resolver
+- **Esforço:** S/M/L
 ```
 
 ### Step 4 — Propose an action plan
