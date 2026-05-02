@@ -183,12 +183,28 @@
       "description": "Feature orchestration: PO → Architect → (Security threat-model) → Dev → QA → Security gate → Review → Commit"
     },
     {
+      "name": "incident-response",
+      "version": "1.0.0",
+      "path": "commands/incident-response.md",
+      "sha256": "e319969a1e431c9880621d2f1085c256ad4c131312b8656995590dd22c4d151c",
+      "scope": "user",
+      "description": "Production incident orchestration: detect → triage → mitigate → RCA → fix → blameless postmortem"
+    },
+    {
       "name": "jira-story",
       "version": "1.0.0",
       "path": "commands/jira-story.md",
       "sha256": "b63552c01487e34f1c88a7f9041cfabade742fd33fa7da2e57dc40db5ee79dbc",
       "scope": "user",
       "description": "Draft or refine Jira user stories with acceptance criteria and test scenarios"
+    },
+    {
+      "name": "memory-query",
+      "version": "1.0.0",
+      "path": "commands/memory-query.md",
+      "sha256": "4fd7417aa5ea43e17298b2c7dcbe614ecae3c89c472301c6ed045b02e31c35ff",
+      "scope": "user",
+      "description": "High-precision lookup over .claude/memory/* with verbatim citation (file § section)"
     },
     {
       "name": "onboard-dev",

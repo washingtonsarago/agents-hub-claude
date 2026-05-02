@@ -74,7 +74,7 @@ Depois recarrega: `source ~/.zshrc`.
 ahc list
 ```
 
-Deve listar os 14 agents + 12 commands com status `local:X.Y.Z   remote:X.Y.Z`.
+Deve listar os 14 agents + 14 commands com status `local:X.Y.Z   remote:X.Y.Z`.
 
 ---
 
@@ -306,7 +306,9 @@ Slash commands instalados em `~/.claude/commands/` — invoque com `/<nome>`:
 | `/db-audit` | Auditoria de schema, índices, FKs, migrations, queries e segurança de banco |
 | `/discovery` | Product discovery — problem framing, JTBD, assumptions, experimentos, go/no-go |
 | `/feature-flow` | Orquestração de feature: PO → Arquiteto → (Threat-model) → Dev → QA → Security gate → Review → Commit |
+| `/incident-response` | Orquestração de incidente em prod: detect → triage → mitigate → RCA → fix → postmortem blameless |
 | `/jira-story` | Redigir ou refinar user stories com critérios de aceite e cenários de teste |
+| `/memory-query` | Lookup de alta precisão na memória do projeto (`.claude/memory/*`) com citação do arquivo + seção |
 | `/onboard-dev` | Gerar `ONBOARDING.md` completo pra novos devs do projeto |
 | `/smart-commit` | Analisar diff e criar Conventional Commit com type/scope corretos |
 | `/tech-debt` | Escanear e classificar dívida técnica com plano de ação priorizado |

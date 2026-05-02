@@ -167,9 +167,20 @@ Facilitador de product discovery — problem framing, JTBD, assumptions, experim
 Orquestra uma feature ponta-a-ponta com gates: PO (refinement) → Arquiteto (feasibility + ADR) → Security (threat-model se tocar surface sensível) → Dev (stack-aware) → QA → Security gate → `/code-review` → memory sync → `/smart-commit`. Cria `docs/todo/<NNN>-<nome>/task.md` e move pra `docs/done/` quando fecha.
 **Exemplo:** `/feature-flow checkout em uma página com salvamento de cartão tokenizado pra clientes recorrentes`
 
+### `/incident-response`
+Orquestra incidente em produção com prioridade na **mitigação** antes de RCA: detect → triage + blast radius → mitigation (flag/rollback/redirect) → RCA específica → fix permanente (`/bug-flow` ou `/feature-flow`) → postmortem blameless → memory sync. Cria `docs/incidents/INC-NNN-<nome>/incident.md` com timeline UTC obrigatória. Severities SEV-1 a SEV-4.
+**Exemplo:** `/incident-response checkout retornando 500 pra ~30% dos clientes desde 14:20 UTC, alerta latency-p99-checkout disparou`
+
 ### `/jira-story`
 Escreve/refina user stories com AC e cenários de teste.
 **Exemplo:** `/jira-story como cliente, quero salvar endereços favoritos para checkout rápido`
+
+### `/memory-query`
+Lookup de alta precisão na memória do projeto. Lê o trio (`.claude/memory/business.md`, `architecture.md`, `guidelines.md`) e devolve **o trecho exato** com citação `arquivo § seção`, em vez de paráfrase. Sem argumento entra em modo browse (índice das 3 memórias).
+**Exemplos:**
+- `/memory-query qual é a política de retenção de PII?`
+- `/memory-query como tratamos optimistic concurrency em escrita?`
+- `/memory-query` (sem argumento — mostra o índice da memória)
 
 ### `/onboard-dev`
 Gera um `ONBOARDING.md` completo do projeto atual.
