@@ -15,10 +15,12 @@ const HOME = os.homedir();
 const CLAUDE_DIR = path.join(HOME, '.claude');
 const AGENTS_DIR = path.join(CLAUDE_DIR, 'agents');
 const COMMANDS_DIR = path.join(CLAUDE_DIR, 'commands');
+const SKILLS_DIR = path.join(CLAUDE_DIR, 'skills');
 const CACHE_DIR = path.join(CLAUDE_DIR, '.ahc-cache');
 const LOCK_FILE = path.join(CLAUDE_DIR, '.ahc-lock.json');
 const CONFIG_FILE = path.join(CLAUDE_DIR, '.ahc-config.json');
 
+// Single-file categories (one .md per item, target = <dir>/<name>.md).
 const CATEGORIES = [
   { key: 'agents',   manifestKey: 'agents',   dir: AGENTS_DIR,   label: 'agent',   ext: '.md' },
   { key: 'commands', manifestKey: 'commands', dir: COMMANDS_DIR, label: 'command', ext: '.md' },
@@ -50,9 +52,10 @@ function writeJSON(p, obj) {
 
 function loadConfig() { return { ...DEFAULT_CONFIG, ...readJSON(CONFIG_FILE, {}) }; }
 function loadLock() {
-  const lock = readJSON(LOCK_FILE, { agents: {}, commands: {}, pins: {} });
+  const lock = readJSON(LOCK_FILE, { agents: {}, commands: {}, skills: {}, pins: {} });
   if (!lock.agents) lock.agents = {};
   if (!lock.commands) lock.commands = {};
+  if (!lock.skills) lock.skills = {};
   if (!lock.pins) lock.pins = {};
   return lock;
 }
@@ -154,6 +157,69 @@ async function syncCategory(cat, manifest, lock, cfg, cachePath) {
   return { added, updated, skipped, pinned };
 }
 
+// Skills are multi-file: each manifest entry has `files: [{path, sha256}]`.
+// Target for a skill file is ~/.claude/skills/<name>/<rel-path-after-skills/<name>/>.
+async function syncSkills(manifest, lock, cfg, cachePath) {
+  const items = manifest.skills || [];
+  if (items.length === 0) return { added: 0, updated: 0, skipped: 0, pinned: 0 };
+
+  fs.mkdirSync(SKILLS_DIR, { recursive: true });
+  let added = 0, updated = 0, skipped = 0, pinned = 0;
+
+  for (const item of items) {
+    if (item.scope && item.scope !== 'user') continue;
+    const current = lock.skills[item.name];
+    const pin = lock.pins[item.name];
+
+    if (pin && pin !== item.version && !FLAGS.force) {
+      pinned++;
+      log(`[pinned]  skill ${item.name} @ ${pin} (remote ${item.version})`);
+      continue;
+    }
+
+    const skillRoot = path.join(SKILLS_DIR, item.name);
+    // Map manifest paths → relative paths under the skill directory.
+    const fileMap = (item.files || []).map(f => ({
+      manifestPath: f.path,
+      relPath: f.path.replace(new RegExp(`^skills/${item.name}/`), ''),
+      sha256: f.sha256,
+    }));
+
+    const allCached = current && current.files && fileMap.every(f => {
+      const local = current.files[f.relPath];
+      return local === f.sha256 && fs.existsSync(path.join(skillRoot, f.relPath));
+    });
+    if (allCached) { skipped++; continue; }
+
+    const localFiles = {};
+    let failed = false;
+    for (const f of fileMap) {
+      const target = path.join(skillRoot, f.relPath);
+      let body;
+      try { body = await readFromSource(cfg, f.manifestPath, cachePath); }
+      catch (e) {
+        err(`[ahc] failed to read skill file ${f.manifestPath}: ${e.message}`);
+        failed = true; break;
+      }
+      const got = sha256(body);
+      if (got !== f.sha256) {
+        err(`[ahc] hash mismatch for skill ${item.name} :: ${f.relPath} — expected ${f.sha256}, got ${got}`);
+        failed = true; break;
+      }
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, body);
+      localFiles[f.relPath] = f.sha256;
+    }
+    if (failed) continue;
+
+    lock.skills[item.name] = { version: item.version, files: localFiles };
+    if (current) { updated++; log(`[updated] skill ${item.name} ${current.version} → ${item.version}`); }
+    else { added++; log(`[added]   skill ${item.name} ${item.version} (${fileMap.length} files)`); }
+  }
+
+  return { added, updated, skipped, pinned };
+}
+
 async function cmdSync() {
   const cfg = loadConfig();
   const lock = loadLock();
@@ -181,6 +247,11 @@ async function cmdSync() {
     totals.skipped += r.skipped;
     totals.pinned += r.pinned;
   }
+  const sr = await syncSkills(manifest, lock, cfg, cachePath);
+  totals.added += sr.added;
+  totals.updated += sr.updated;
+  totals.skipped += sr.skipped;
+  totals.pinned += sr.pinned;
 
   lock.last_sync = new Date().toISOString();
   lock.manifest_version = manifest.version;
@@ -224,6 +295,35 @@ async function cmdList() {
       console.log(`${status} ${name.padEnd(30)} local:${v.padEnd(8)} remote:${r}${pinTag}`);
     }
   }
+
+  // Skills (multi-file): compare by version + per-file shas.
+  const remoteSkills = manifest ? (manifest.skills || []) : [];
+  const localSkills = lock.skills || {};
+  const skillNames = new Set([...Object.keys(localSkills), ...remoteSkills.map(i => i.name)]);
+  if (skillNames.size > 0) {
+    console.log(`\nSKILLS`);
+    for (const name of [...skillNames].sort()) {
+      const local = localSkills[name];
+      const remote = remoteSkills.find(i => i.name === name);
+      const pin = lock.pins[name];
+      let status = '  ';
+      if (!local && remote) status = '++';
+      else if (local && !remote) status = '--';
+      else if (local && remote) {
+        const drift = (remote.files || []).some(f => {
+          const rel = f.path.replace(new RegExp(`^skills/${name}/`), '');
+          return !local.files || local.files[rel] !== f.sha256;
+        });
+        if (drift) status = '↑↑';
+      }
+      const v = local ? local.version : '-';
+      const r = remote ? remote.version : '-';
+      const pinTag = pin ? ` [pin:${pin}]` : '';
+      const fileCount = remote ? (remote.files || []).length : (local && local.files ? Object.keys(local.files).length : 0);
+      console.log(`${status} ${name.padEnd(30)} local:${v.padEnd(8)} remote:${r}${pinTag}  (${fileCount} files)`);
+    }
+  }
+
   console.log('\nlegend: ++ new  ↑↑ update available  -- removed remotely');
 }
 
@@ -271,6 +371,7 @@ commands:
 files:
   ~/.claude/agents/                        where agents are installed
   ~/.claude/commands/                      where commands are installed
+  ~/.claude/skills/                        where skills are installed (multi-file per skill)
   ~/.claude/.ahc-lock.json                 local lock
   ~/.claude/.ahc-config.json               local config
 `);

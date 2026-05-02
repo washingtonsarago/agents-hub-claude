@@ -74,7 +74,7 @@ Depois recarrega: `source ~/.zshrc`.
 ahc list
 ```
 
-Deve listar os 14 agents + 14 commands com status `local:X.Y.Z   remote:X.Y.Z`.
+Deve listar os 14 agents + 14 commands + 1 skill com status `local:X.Y.Z   remote:X.Y.Z`.
 
 ---
 
@@ -317,20 +317,33 @@ Slash commands instalados em `~/.claude/commands/` — invoque com `/<nome>`:
 
 ---
 
-## Adicionando / atualizando um agent
+## Adicionando / atualizando um agent, command ou skill
 
-1. **Crie ou edite** o arquivo em `agents/<nome>.md`
-2. **Gere o hash** e atualize `manifest.json`:
+1. **Crie ou edite** o arquivo:
+   - `agents/<nome>.md` — agent
+   - `commands/<nome>.md` — slash command
+   - `skills/<nome>/SKILL.md` (+ qualquer arquivo auxiliar em subpastas) — skill multi-arquivo
+2. **Regenere o manifest** localmente:
    ```bash
-   shasum -a 256 agents/<nome>.md
+   node scripts/regen-manifest.js
    ```
-3. **Bump** a `version` do agent no `manifest.json` (semver)
-4. **Atualize** o campo `updated_at` no topo do manifest
-5. **Commit + PR** para `main`
+   O script escaneia `agents/` + `commands/` + `skills/`, recalcula sha256 (por arquivo nas skills), bumpa `version` (patch por padrão; use `--bump=minor` ou `--bump=major` quando aplicável), atualiza `updated_at`, e lida com adição/remoção de itens.
+3. **Edite a `description`** do item no `manifest.json` se for um arquivo novo (a auto-extração tira da frontmatter, mas vale revisar).
+4. **Commit + PR** para `main`.
+
+A GitHub Action **Regen manifest** roda em PRs com `--check` (falha se a pessoa esqueceu o passo 2) e roda automaticamente no push pra `main` (auto-commit do manifest se houver drift residual).
 
 Assim que o PR for mergeado, todos os devs com `ahc` instalado vão receber a atualização no próximo `SessionStart`.
 
-> Dica: futuramente dá para automatizar os passos 2–4 com um script `scripts/regen-manifest.sh` ou um GitHub Action rodando no `push` para `main`.
+### Modos do script
+
+```bash
+node scripts/regen-manifest.js                # default: bump patch nos que mudaram, escreve manifest
+node scripts/regen-manifest.js --dry-run      # mostra o que mudaria, sem escrever
+node scripts/regen-manifest.js --check        # exit 1 se manifest está desatualizado (modo CI)
+node scripts/regen-manifest.js --bump=minor   # bump minor em todos que mudaram
+node scripts/regen-manifest.js --bump=major   # bump major em todos que mudaram
+```
 
 ---
 
@@ -367,20 +380,40 @@ Agents que precisam de contexto persistente do projeto **leem e escrevem em `.cl
 
 ```
 .
-├── agents/              # .md dos agents (source of truth)
-├── commands/            # .md dos slash commands
+├── agents/              # .md dos agents (source of truth, distribuídos via ahc)
+├── commands/            # .md dos slash commands (distribuídos via ahc)
+├── skills/              # skills do Claude Code, multi-arquivo (distribuídos via ahc)
+│   └── <nome>/
+│       ├── SKILL.md
+│       └── templates/   # ou scripts/, etc. — qualquer estrutura interna
 ├── bin/
 │   └── ahc              # CLI Node zero-deps
-├── manifest.json        # index com versão + sha256 por item (agents + commands)
+├── scripts/
+│   └── regen-manifest.js  # regenera manifest.json a partir de agents/ + commands/ + skills/
+├── .github/workflows/
+│   └── regen-manifest.yml # CI: --check em PR, auto-commit no push pra main
+├── manifest.json        # index com versão + sha256 por item (agents + commands + skills)
 ├── install.sh           # bootstrap: instala ahc + configura hook
 └── README.md
 ```
+
+## Skills disponíveis
+
+Skills do Claude Code (`~/.claude/skills/<nome>/SKILL.md`) são distribuídas igual aos agents e commands — `ahc sync` baixa a árvore inteira da skill (SKILL.md + arquivos auxiliares) com sha256 por arquivo.
+
+| Skill | Uso |
+|---|---|
+| `architecture-diagram` | Gera diagramas de arquitetura em PNG (estilo Linear/Vercel) com matplotlib — cards, sombras, paleta por camada |
+
+> **Atenção pra devs com `ahc` antigo:** versões do `ahc` anteriores a 2026-05-02 não conhecem a categoria `skills` e vão ignorar essa parte do manifest. Re-rode `install.sh` ou copie só o binário atualizado: `cp /tmp/ahc-boot/bin/ahc ~/.local/bin/ahc`.
 
 ## Arquivos gerenciados na máquina do dev
 
 ```
 ~/.local/bin/ahc                   # binário da CLI
 ~/.claude/agents/*.md              # agents instalados
+~/.claude/commands/*.md            # slash commands instalados
+~/.claude/skills/*/                # skills instaladas (multi-arquivo por skill)
 ~/.claude/.ahc-config.json         # config (repo, branch, channel)
 ~/.claude/.ahc-lock.json           # lock com versão instalada e pins
 ~/.claude/settings.json            # contém o hook SessionStart

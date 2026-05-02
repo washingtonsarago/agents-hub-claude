@@ -196,6 +196,22 @@ Escaneia e classifica dívida técnica com plano de ação priorizado.
 
 ---
 
+## Skills
+
+Skills do Claude Code são auto-carregadas pelo Claude quando o contexto/keywords da conversa fazem match com a `description` da skill (não precisa ser invocada com `/`). Distribuídas via `ahc sync` em `~/.claude/skills/<nome>/`.
+
+### `architecture-diagram`
+**O que faz:** gera diagramas de arquitetura em **PNG** (estilo Linear/Vercel) com matplotlib — cards com sombra suave, barra de acento por camada, paleta moderna (indigo/cyan/emerald/fuchsia/violet/amber/red/slate), setas curvas com badge.
+**Quando aciona automaticamente:** quando você pede "diagrama", "imagem", "PNG", "desenho", "esquema visual", "ilustração" da arquitetura/sistema/fluxo/infraestrutura/componentes.
+**Exemplos:**
+- "Desenha um PNG da arquitetura do gateway com gateway → service → repository → postgres."
+- "Gera um diagrama do pipeline de ingestão (kafka → debezium → snowflake)."
+- "Tema escuro do diagrama anterior, por favor."
+
+> Skills usam `~/.claude/skills/<nome>/SKILL.md` + arquivos auxiliares (templates, scripts). O `ahc sync` baixa a árvore completa.
+
+---
+
 ## Memória canônica do projeto
 
 A partir do `project-memory-keeper@3.0.0`, todo agent espera encontrar três arquivos no projeto:

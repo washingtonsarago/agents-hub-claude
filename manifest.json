@@ -230,5 +230,23 @@
       "scope": "user",
       "description": "Scan and classify technical debt with prioritized action plan"
     }
+  ],
+  "skills": [
+    {
+      "name": "architecture-diagram",
+      "version": "1.0.0",
+      "scope": "user",
+      "description": "Gera diagramas de arquitetura em PNG com qualidade profissional (estilo Linear/Vercel) usando matplotlib. Use quando o usuario pedir um diagrama, \"uma imagem\", ",
+      "files": [
+        {
+          "path": "skills/architecture-diagram/SKILL.md",
+          "sha256": "891794bc5e8a94502db9ff650a6343b060d51d6ce7f095c7d306aaac10e7e540"
+        },
+        {
+          "path": "skills/architecture-diagram/templates/pro_template.py",
+          "sha256": "c0e9063d9a6aff05545c0fae3c4d46affb81ff6cbb8eb28fe19cc5f18084ac61"
+        }
+      ]
+    }
   ]
 }
