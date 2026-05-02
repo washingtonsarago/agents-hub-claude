@@ -208,6 +208,30 @@ Skills do Claude Code são auto-carregadas pelo Claude quando o contexto/keyword
 - "Gera um diagrama do pipeline de ingestão (kafka → debezium → snowflake)."
 - "Tema escuro do diagrama anterior, por favor."
 
+### `sequence-diagram`
+**O que faz:** gera diagramas de sequência (UML-ish) em **PNG** — participantes verticais com lifelines pontilhadas, mensagens horizontais com label em badge, blocos `opt`/`alt`/`loop`/`par`, notas. Sync solidas, async tracejadas, erro vermelho. Mesma família visual da `architecture-diagram`.
+**Quando aciona automaticamente:** quando você pede "diagrama de sequência", "fluxo de request", "como o serviço A chama o B", "sequence diagram", "fluxo do webhook/saga/checkout".
+**Exemplos:**
+- "Desenha o fluxo de payment: customer → gateway → payment-service → stripe → webhook → notif → email."
+- "Sequence diagram do handshake gRPC com `auth + tracing` interceptors."
+- "Mostra o saga de criação de pedido com compensação no caso de pagamento recusado."
+
+### `er-diagram`
+**O que faz:** gera diagramas Entity-Relationship em **PNG** a partir de schema SQL/DDL/migration ou descrição textual. Cada tabela vira card com header colorido (cor por bounded context), linhas de coluna com tipo + pílulas de constraint (PK/FK/UQ/NN/IX), relações com multiplicidade nas pontas (1:1, 1:N, N:1, M:N).
+**Quando aciona automaticamente:** "diagrama ER", "diagrama de schema", "diagrama de banco", "como se relacionam essas tabelas", "modelagem visual do banco".
+**Exemplos:**
+- "Lê `migrations/001_init.sql` e gera o ER do schema."
+- "Desenha o ER só do bounded context de payments."
+- "Visualiza o schema mostrando indexes secundários como pílulas IX."
+
+### `release-notes`
+**O que faz:** gera release notes estruturadas em **Markdown** (e PDF via `pandoc + xelatex` se disponível) — header com versão/data/manager, summary, breaking changes com migration steps, security fixes (com severity), features (heading H3), improvements/fixes (bullets), deprecations (tabela), contributors. Voz ativa, sem `we`, codigo em backticks, datas ISO 8601.
+**Quando aciona automaticamente:** "release notes", "release notes da v2.5", "compila as PRs do sprint em release notes", "gera o PDF de release", "changelog estruturado".
+**Exemplos:**
+- "Gera release notes pra v2.5.0. Features: webhooks de pagamento, bulk export. Breaking: removi `/reports/v1`. Fixes: race no cache, memory leak em jobs."
+- "Compila as PRs mergeadas desde v2.4.3 em release notes formato customer-facing."
+- "Versão concise pra email interno."
+
 > Skills usam `~/.claude/skills/<nome>/SKILL.md` + arquivos auxiliares (templates, scripts). O `ahc sync` baixa a árvore completa.
 
 ---

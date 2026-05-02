@@ -247,6 +247,58 @@
           "sha256": "c0e9063d9a6aff05545c0fae3c4d46affb81ff6cbb8eb28fe19cc5f18084ac61"
         }
       ]
+    },
+    {
+      "name": "er-diagram",
+      "version": "1.0.0",
+      "scope": "user",
+      "description": "Gera diagramas ER (Entity-Relationship) em PNG com qualidade profissional usando matplotlib. Use quando o usuario pedir um \"diagrama ER\", \"diagrama de banco\", \"",
+      "files": [
+        {
+          "path": "skills/er-diagram/SKILL.md",
+          "sha256": "3a2bbe9ea11677a54c1a3cc840e6304c651743cd2d1183b583a05cbc7d9e4278"
+        },
+        {
+          "path": "skills/er-diagram/templates/er_template.py",
+          "sha256": "468f8e86a277c46508a66e76a877da3a2a56ffed4fd08f3eafb051b41fd10df7"
+        }
+      ]
+    },
+    {
+      "name": "release-notes",
+      "version": "1.0.0",
+      "scope": "user",
+      "description": "Gera release notes estruturadas em Markdown (e PDF opcional via pandoc) a partir de versao + commits/PRs/manual input. Use quando o usuario pedir \"release notes",
+      "files": [
+        {
+          "path": "skills/release-notes/SKILL.md",
+          "sha256": "0a6411fffe4ae3387e44e9a3cdcc90175f4edc62570d2410a7aca9c0cf4b2316"
+        },
+        {
+          "path": "skills/release-notes/templates/release-notes.md.j2",
+          "sha256": "29c0771af17fd9a5ca1eecb31eba2fbf0577a84d340a20bc0cb6a9e34d16ad90"
+        },
+        {
+          "path": "skills/release-notes/templates/render.py",
+          "sha256": "c1d39d3237aecbc51ed8e5ff263f04d4c49c35e506bc924d493177e10a6ba30d"
+        }
+      ]
+    },
+    {
+      "name": "sequence-diagram",
+      "version": "1.0.0",
+      "scope": "user",
+      "description": "Gera diagramas de sequencia em PNG com qualidade profissional (estilo Linear/Vercel) usando matplotlib. Use quando o usuario pedir um \"diagrama de sequencia\", \"",
+      "files": [
+        {
+          "path": "skills/sequence-diagram/SKILL.md",
+          "sha256": "2ca487d90d0d8cd3210c3724ff51869f852cb277d7853b7803f41a04f24e6168"
+        },
+        {
+          "path": "skills/sequence-diagram/templates/sequence_template.py",
+          "sha256": "2bdceba22bf19e4506fc91423c85ef9abbb03dc4cbfbf2f46487862cb93cab18"
+        }
+      ]
     }
   ]
 }

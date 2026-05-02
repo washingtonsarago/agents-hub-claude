@@ -74,7 +74,7 @@ Depois recarrega: `source ~/.zshrc`.
 ahc list
 ```
 
-Deve listar os 14 agents + 14 commands + 1 skill com status `local:X.Y.Z   remote:X.Y.Z`.
+Deve listar os 14 agents + 14 commands + 4 skills com status `local:X.Y.Z   remote:X.Y.Z`.
 
 ---
 
@@ -403,7 +403,10 @@ Skills do Claude Code (`~/.claude/skills/<nome>/SKILL.md`) são distribuídas ig
 
 | Skill | Uso |
 |---|---|
-| `architecture-diagram` | Gera diagramas de arquitetura em PNG (estilo Linear/Vercel) com matplotlib — cards, sombras, paleta por camada |
+| `architecture-diagram` | Diagramas de arquitetura em PNG (estilo Linear/Vercel) — cards, sombras, paleta por camada |
+| `sequence-diagram` | Diagramas de sequência (UML-ish) em PNG — participantes verticais, mensagens com badge, blocks opt/alt/loop, sync vs async vs error |
+| `er-diagram` | Diagramas Entity-Relationship em PNG a partir de SQL/DDL ou descrição — tabelas com colunas + tipos + constraints PK/FK/UQ/NN/IX, relações com multiplicidade |
+| `release-notes` | Release notes estruturadas em Markdown (e PDF via pandoc) — header, summary, breaking changes com migration, security, features, fixes, contributors |
 
 > **Atenção pra devs com `ahc` antigo:** versões do `ahc` anteriores a 2026-05-02 não conhecem a categoria `skills` e vão ignorar essa parte do manifest. Re-rode `install.sh` ou copie só o binário atualizado: `cp /tmp/ahc-boot/bin/ahc ~/.local/bin/ahc`.
 
