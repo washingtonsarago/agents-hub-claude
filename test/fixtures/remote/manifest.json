@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "channel": "stable",
+  "updated_at": "2026-05-02",
+  "repo": "fixture/local",
+  "agents": [
+    {
+      "name": "test-agent",
+      "version": "1.0.0",
+      "path": "agents/test-agent.md",
+      "sha256": "7ebbc5e441d69b0885ad9ddfb4a55bea5288a17d5ceb0f17f7419d0dadd10294",
+      "scope": "user",
+      "description": "Test agent fixture used by tests."
+    }
+  ],
+  "commands": [
+    {
+      "name": "test-command",
+      "version": "1.0.0",
+      "path": "commands/test-command.md",
+      "sha256": "c3acee842231c03bbb0a8b6dabe9700be10b5fc31d9ca2255d209993b1d7d5bf",
+      "scope": "user",
+      "description": "Test command fixture used by tests."
+    }
+  ],
+  "skills": [
+    {
+      "name": "test-skill",
+      "version": "1.0.0",
+      "scope": "user",
+      "description": "Test skill fixture used by tests.",
+      "files": [
+        {
+          "path": "skills/test-skill/SKILL.md",
+          "sha256": "81576b35d4c56b5019699a0b64c5cec77ec5ece2e3329f237883b94cc9c67875"
+        },
+        {
+          "path": "skills/test-skill/templates/helper.py",
+          "sha256": "e227748d9d48a4fcb7410b3dc7ade15d5f7b99337766095b1104bbf61a229180"
+        }
+      ]
+    }
+  ]
+}

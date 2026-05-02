@@ -347,6 +347,48 @@ node scripts/regen-manifest.js --bump=major   # bump major em todos que mudaram
 
 ---
 
+## Validação e testes
+
+Dois mecanismos rodam em CI (workflow `Test`) em todo PR e push pra `main`. Ambos são zero-dep e dá pra rodar local antes do commit.
+
+### Validator de artefatos
+
+`scripts/validate-artifacts.js` cobre o que o `regen-manifest.js` não cobre — invariantes do conteúdo:
+
+- Frontmatter obrigatório nos agents (`name`, `description`, `model`).
+- `name` da frontmatter bate com o nome do arquivo (kebab-case).
+- `description` (quando entre aspas) é JSON válido.
+- `model` em `opus|sonnet|haiku`.
+- `tier` (quando presente) em `reasoning|speed`.
+- Skills: `SKILL.md` existe, frontmatter tem `name` igual à pasta, manifest tem todos os arquivos da árvore (sem orphan).
+- `manifest.updated_at` no formato `YYYY-MM-DD`.
+- `sha256` de cada item bate com o conteúdo do arquivo.
+
+```bash
+node scripts/validate-artifacts.js                  # passa com warnings, exit 0 se sem erros
+node scripts/validate-artifacts.js --quiet          # só erros
+node scripts/validate-artifacts.js --strict         # tier ausente vira erro (não warning)
+```
+
+### Testes (`node --test`)
+
+Suite de integração cobrindo o CLI (`bin/ahc`), o regen (`scripts/regen-manifest.js`) e o validator. Spawna o CLI real contra fixtures `file://` num `HOME` temporário — testa exatamente o que o dev experimenta.
+
+```bash
+node --test test/*.test.js                          # roda tudo (~1.5s)
+node --test test/sync.test.js                       # só os de sync
+node --test test/regen.test.js                      # só regen
+node --test test/validator.test.js                  # só validator
+```
+
+Cobertura atual:
+
+- `sync.test.js` — install fresco, idempotência, hash mismatch em skill, pin/unpin, lock back-compat (sem `skills` field), `list` com 3 categorias, `config` get/set.
+- `regen.test.js` — clean repo, edição com bump patch, `--check` falhando em drift, `--dry-run`, novo agent, remoção de orphan, skill multi-arquivo, `.DS_Store` ignorado, `--bump=minor`, `--bump` inválido.
+- `validator.test.js` — fixture clean passa, frontmatter ausente, name/filename mismatch, JSON quebrado, model/tier inválidos, `--strict`, sha drift, file ausente, orphan, aux file fora do manifest, manifest JSON inválido, `updated_at` formato errado.
+
+---
+
 ## Convenções de redação (agents & commands)
 
 Para manter o hub coerente, todo agent ou command novo segue:
@@ -389,9 +431,17 @@ Agents que precisam de contexto persistente do projeto **leem e escrevem em `.cl
 ├── bin/
 │   └── ahc              # CLI Node zero-deps
 ├── scripts/
-│   └── regen-manifest.js  # regenera manifest.json a partir de agents/ + commands/ + skills/
+│   ├── regen-manifest.js     # regenera manifest.json a partir de agents/ + commands/ + skills/
+│   └── validate-artifacts.js # CI gate: frontmatter + sha + orphan + nomes
+├── test/                     # node:test integration tests (sync, regen, validator)
+│   ├── helpers.js
+│   ├── fixtures/remote/      # mini repo de fixtures (1 agent, 1 command, 1 skill)
+│   ├── sync.test.js
+│   ├── regen.test.js
+│   └── validator.test.js
 ├── .github/workflows/
-│   └── regen-manifest.yml # CI: --check em PR, auto-commit no push pra main
+│   ├── regen-manifest.yml    # CI: --check em PR, auto-commit no push pra main
+│   └── test.yml              # CI: validator + node --test em PR e push
 ├── manifest.json        # index com versão + sha256 por item (agents + commands + skills)
 ├── install.sh           # bootstrap: instala ahc + configura hook
 └── README.md
