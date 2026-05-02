@@ -1,6 +1,7 @@
 # agents-hub-claude
 
 > 📘 **[Guia de uso com exemplos →](docs/USAGE.md)** — o que cada agent/command faz, quando acionar, prompts prontos e fluxos combinados.
+> 🗺️ **[Roadmap →](docs/ROADMAP.md)** — iniciativas futuras, decisões pendentes e o que está fora de escopo (com razão).
 
 ## Objetivo
 
