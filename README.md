@@ -16,12 +16,30 @@ Em resumo: **menos tempo configurando Claude Code, mais tempo entregando softwar
 
 ---
 
-Registry centralizado de **agents e commands do Claude Code** da EMS-NCTECH, com CLI própria (`ahc`) que sincroniza tudo automaticamente em cada máquina.
+## Arquitetura
 
-- **Fonte da verdade:** `manifest.json` com versão e `sha256` de cada agent
+![Arquitetura do agents-hub-claude](docs/architecture/agents-hub-claude.png)
+
+> Gerado pela skill `architecture-diagram` (matplotlib). Pra regenerar após mudar a estrutura: `python3 docs/architecture/render.py`.
+
+**Fluxo, da esquerda pra direita:**
+
+1. **Contributor** edita `agents/`, `commands/` ou `skills/` no repo do hub.
+2. Push pra um PR → **CI Actions** roda dois gates: `regen-manifest --check` (falha se manifest está desatualizado) + `test.yml` (validator + 31 testes de integração `node:test`).
+3. Merge no `main` → workflow `regen-manifest` faz auto-commit do manifest se houver drift residual.
+4. Em cada `SessionStart` do Claude Code de cada dev, o hook dispara `ahc sync --quiet --timeout=5`.
+5. `ahc` faz `git clone --depth=1` do repo, lê `manifest.json`, compara com `~/.claude/.ahc-lock.json`, baixa só o que mudou, **verifica sha256 por arquivo** (incluindo cada arquivo dentro de uma skill), grava em `~/.claude/{agents,commands,skills}/`.
+6. Claude Code lê `~/.claude/` na inicialização da sessão; agents/commands/skills ficam disponíveis pro dev imediatamente.
+
+---
+
+Registry centralizado de **agents, commands e skills do Claude Code** da EMS-NCTECH, com CLI própria (`ahc`) que sincroniza tudo automaticamente em cada máquina.
+
+- **Fonte da verdade:** `manifest.json` com versão e `sha256` por item (e por arquivo, em skills)
 - **CLI:** `ahc` — Node zero-deps, distribuída via `install.sh`
 - **Auto-update:** hook `SessionStart` do Claude Code roda `ahc sync` a cada sessão
-- **Destino dos arquivos:** `~/.claude/agents/` (agents) e `~/.claude/commands/` (slash commands)
+- **Destino dos arquivos:** `~/.claude/agents/` (agents), `~/.claude/commands/` (slash commands), `~/.claude/skills/<nome>/` (skills multi-arquivo)
+- **Quality gates:** GitHub Actions `regen-manifest` (PR + push) e `test.yml` (validator + 31 testes)
 
 > **Como usar cada agent/command?** Veja o **[Guia de uso com exemplos →](docs/USAGE.md)** — o que cada um faz, quando acionar, prompts prontos e fluxos combinados.
 
