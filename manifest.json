@@ -1,7 +1,7 @@
 {
   "version": 1,
   "channel": "stable",
-  "updated_at": "2026-04-13",
+  "updated_at": "2026-05-02",
   "repo": "EMS-NCTECH/agents-hub-claude",
   "agents": [
     {
@@ -62,11 +62,19 @@
     },
     {
       "name": "project-memory-keeper",
-      "version": "2.1.0",
+      "version": "3.0.0",
       "path": "agents/project-memory-keeper.md",
-      "sha256": "f4267f922922a452befda3aa91d92a7941e619021fe2941dc98b4fa615f24ba3",
+      "sha256": "812a891ebd499b4bc555c5f1131c1bf2af89b4626c0f1f814c532178aa28888f",
       "scope": "user",
-      "description": "README / CONTEXT / ADR documentation sync"
+      "description": "Owns the .claude/memory trio (business/architecture/guidelines), READMEs, CONTEXT.md, and ADRs"
+    },
+    {
+      "name": "security-specialist",
+      "version": "1.0.0",
+      "path": "agents/security-specialist.md",
+      "sha256": "7ebc74bc3a1c5e46d09a90640dc961a254094db46a7b8afca3f759ce2f7417b2",
+      "scope": "user",
+      "description": "AppSec/DevSecOps — OWASP Top 10, CWE Top 25, STRIDE, secret + dep audit, release gate"
     },
     {
       "name": "senior-product-owner",
@@ -111,6 +119,22 @@
       "description": "Architecture design — C4 diagrams, ADRs, trade-off analysis"
     },
     {
+      "name": "bootstrap-project",
+      "version": "1.0.0",
+      "path": "commands/bootstrap-project.md",
+      "sha256": "7c9d00608c96ee12ef5f2904335244353ec771c12721ea29d874dd21f766802b",
+      "scope": "user",
+      "description": "Scan repo, detect stack, seed .claude/memory trio + docs/{adr,todo,done}"
+    },
+    {
+      "name": "bug-flow",
+      "version": "1.0.0",
+      "path": "commands/bug-flow.md",
+      "sha256": "e5a859547a68771878bfa68395dcd5c596b59dbe134291402ff91415dfa1ce81",
+      "scope": "user",
+      "description": "Bug orchestration: triage → RCA → fix + regression test → security gate → commit"
+    },
+    {
       "name": "code-review",
       "version": "1.1.0",
       "path": "commands/code-review.md",
@@ -133,6 +157,14 @@
       "sha256": "51077341fc416caf0f86ac3f06e49c4f8501e776b1fdebf3ee143b39e5ddf5a3",
       "scope": "user",
       "description": "Product discovery — problem framing, JTBD, assumptions, experiments, go/no-go"
+    },
+    {
+      "name": "feature-flow",
+      "version": "1.0.0",
+      "path": "commands/feature-flow.md",
+      "sha256": "f7a5acf792eead89add0cf382fef127e6c27fd454d6f0019e1f42674f5769d63",
+      "scope": "user",
+      "description": "Feature orchestration: PO → Architect → (Security threat-model) → Dev → QA → Security gate → Review → Commit"
     },
     {
       "name": "jira-story",

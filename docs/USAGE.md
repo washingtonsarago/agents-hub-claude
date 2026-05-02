@@ -73,12 +73,21 @@ Este guia mostra **o que cada agent/command faz**, **quando acionar**, e **exemp
 - "Autovacuum não dá conta de `public.events` (bloat 40%). Diagnostique e tune parâmetros."
 
 ### project-memory-keeper
-**O que faz:** mantém README, CONTEXT.md e ADRs em dia. Resume o projeto para onboarding.
-**Quando usar:** após refactor grande, novo módulo, mudança arquitetural, ou para gerar um snapshot do projeto.
+**O que faz:** mantém o **trio de memória do projeto** (`.claude/memory/business.md`, `architecture.md`, `guidelines.md`), além de README, CONTEXT.md e ADRs. Sintetiza o projeto pra outros agents.
+**Quando usar:** após refactor grande, novo módulo, mudança arquitetural, decisão de domínio, vuln remediada, ou para gerar um snapshot do projeto.
 **Exemplos:**
-- "Adicionei `src/payments/` com integração Stripe. Documente o módulo e atualize o README global."
-- "Migramos de REST pra GraphQL no `api-gateway`. Escreva o ADR e propague a mudança nos docs."
-- "Dê um sumário executivo do projeto atual (módulos, tech stack, decisões-chave)."
+- "Adicionei `src/payments/` com integração Stripe. Atualize `architecture.md` (nova integração + trust boundary), `business.md` (regra de cobrança) e o README global."
+- "Migramos de REST pra GraphQL no `api-gateway`. Escreva o ADR e propague em `architecture.md`."
+- "Dê um sumário executivo do projeto atual (lê o trio + ADRs)."
+
+### security-specialist
+**O que faz:** AppSec/DevSecOps — threat modeling STRIDE, audit OWASP Top 10 + CWE Top 25, secret scanning, audit de CVE em dependências, validação de configuração, e **release-gate** explícito.
+**Quando usar:** revisão de PR que toca surface sensível (auth, secrets, PII, payments, upload, deserialization, raw SQL, multi-tenant), threat-model proativo durante design, decisão de gate antes de release.
+**Exemplos:**
+- "Audite o PR #142 — toca login e geração de token. Quero verdict + STRIDE."
+- "Vou expor endpoint público de upload de imagem. Faça threat-model **antes** de implementar."
+- "Posso liberar o release? Já passou code-review e QA."
+- "Escaneia secrets no repo todo + CVEs nas deps de produção do serviço orders."
 
 ### senior-product-owner
 **O que faz:** user stories INVEST, critérios de aceite (Gherkin), RICE/MoSCoW, OKRs, métricas.
@@ -116,6 +125,14 @@ Gera ou valida contratos de API (OpenAPI/AsyncAPI).
 Facilita design arquitetural — C4, ADR, trade-offs.
 **Exemplo:** `/arch-design sistema de notificações multi-canal (email/SMS/push) com 500 msg/s e retry com DLQ`
 
+### `/bootstrap-project`
+Escaneia o repo, detecta stack e cria a memória canônica do projeto: `.claude/memory/{business,architecture,guidelines}.md` + `docs/{adr,todo,done}/`. Roda **uma vez por repo**, na primeira instalação ou se a memória foi perdida.
+**Exemplo:** `/bootstrap-project` (na raiz do repo, sem argumento — ele detecta sozinho)
+
+### `/bug-flow`
+Orquestra um bug ponta-a-ponta: triage → RCA → fix + teste de regressão → security gate (se necessário) → review → commit. Cria `docs/todo/<NNN>-<nome>/bug.md` e move pra `docs/done/` quando fecha. Toda fix sai com regression test que falha sem o fix.
+**Exemplo:** `/bug-flow autovacuum não roda em public.events e bloat passou de 40% — ver thread no Slack #db`
+
 ### `/code-review`
 Revisão profunda de diff/PR: segurança, correção, performance, testes.
 **Exemplo:** `/code-review` (com staged diff) ou `/code-review PR #142`
@@ -127,6 +144,10 @@ Auditoria de schema, índices, FKs, migrations e segurança de banco.
 ### `/discovery`
 Facilitador de product discovery — problem framing, JTBD, assumptions, experimentos, go/no-go.
 **Exemplo:** `/discovery queremos reduzir churn em contas SMB — ajude a estruturar a investigação`
+
+### `/feature-flow`
+Orquestra uma feature ponta-a-ponta com gates: PO (refinement) → Arquiteto (feasibility + ADR) → Security (threat-model se tocar surface sensível) → Dev (stack-aware) → QA → Security gate → `/code-review` → memory sync → `/smart-commit`. Cria `docs/todo/<NNN>-<nome>/task.md` e move pra `docs/done/` quando fecha.
+**Exemplo:** `/feature-flow checkout em uma página com salvamento de cartão tokenizado pra clientes recorrentes`
 
 ### `/jira-story`
 Escreve/refina user stories com AC e cenários de teste.
@@ -146,16 +167,50 @@ Escaneia e classifica dívida técnica com plano de ação priorizado.
 
 ---
 
+## Memória canônica do projeto
+
+A partir do `project-memory-keeper@3.0.0`, todo agent espera encontrar três arquivos no projeto:
+
+```
+.claude/
+└── memory/
+    ├── business.md       # domínio, glossário, regras, permissões, JTBD, escopo
+    ├── architecture.md   # stack, NFRs, integrações, trust boundaries, threat models, security controls
+    └── guidelines.md     # convenções de código deste repo, anti-patterns banidos, vulns remediadas, tom
+```
+
+- Crie com `/bootstrap-project` na raiz do repo (uma vez).
+- Mantenha com `project-memory-keeper` (sob demanda) ou via os fluxos `/feature-flow` e `/bug-flow` (automático).
+- Versione com o repo. **Não** vai pro `~/.claude/` global — é por projeto.
+
+> Routing rule: o que o produto faz e pra quem → `business.md`. Como o sistema é construído e roda → `architecture.md`. Como o time escreve código neste repo → `guidelines.md`.
+
+---
+
 ## Fluxos combinados (receitas)
 
-**Nova feature ponta-a-ponta (backend Go):**
+> **Atalho:** para feature/bug com gates explícitos, use direto `/feature-flow` e `/bug-flow` — eles encadeiam tudo abaixo.
+
+**Nova feature ponta-a-ponta (manual, sem `/feature-flow`):**
 1. `/discovery` → valida problema
 2. `senior-product-owner` → stories + AC
 3. `system-architect` → ADR + design
-4. `go-senior-engineer` → implementação
-5. `go-sdet-backend` → testes + fuzz
-6. `/code-review` → revisão
-7. `/smart-commit` → commit
+4. `security-specialist` → threat-model (se tocar surface sensível)
+5. `go-senior-engineer` (ou stack equivalente) → implementação
+6. `go-sdet-backend` → testes + fuzz
+7. `security-specialist` → release gate
+8. `/code-review` → revisão
+9. `project-memory-keeper` → sync `architecture.md` / `guidelines.md` / ADR
+10. `/smart-commit` → commit
+
+**Bug ponta-a-ponta (manual, sem `/bug-flow`):**
+1. `go-senior-engineer` (ou stack equivalente) → triage + RCA
+2. mesmo dev → fix + teste de regressão
+3. `go-sdet-backend` → valida regressão + smoke adjacente
+4. `security-specialist` → audit do diff (se surface sensível)
+5. `/code-review` → revisão
+6. `project-memory-keeper` → registra anti-pattern em `guidelines.md` (se nova classe de bug)
+7. `/smart-commit` → commit (`fix:`)
 
 **Incidente de performance em Postgres:**
 1. `postgres-dba` → diagnóstico com EXPLAIN ANALYZE
@@ -167,6 +222,11 @@ Escaneia e classifica dívida técnica com plano de ação priorizado.
 2. `cypress-qa-analyst` → E2E do fluxo
 3. `/code-review` → revisão
 4. `project-memory-keeper` → atualiza docs
+
+**Decisão de release (gate):**
+1. `security-specialist` → verdict (APPROVE / APPROVE WITH MITIGATIONS / BLOCK)
+2. Se BLOCK → loop ao dev com a finding específica.
+3. Se APPROVE → `/smart-commit` final + tag.
 
 ---
 

@@ -74,7 +74,7 @@ Depois recarrega: `source ~/.zshrc`.
 ahc list
 ```
 
-Deve listar os 11 agents + 8 commands com status `local:X.Y.Z   remote:X.Y.Z`.
+Deve listar os 12 agents + 12 commands com status `local:X.Y.Z   remote:X.Y.Z`.
 
 ---
 
@@ -280,9 +280,12 @@ Lista atual (ver `manifest.json` para versões e hashes):
 | `aws-devops-engineer` | Infra AWS, CI/CD, Terraform, EKS, observabilidade |
 | `cypress-qa-analyst` | Cypress E2E, estratégia de teste, CI integration |
 | `dotnet-backend-architect` | .NET / ASP.NET Core / DDD / CQRS |
+| `go-sdet-backend` | Go SDET — testes, coverage, race, fuzz |
 | `go-senior-engineer` | Go senior — concurrency, gRPC, microservices |
 | `integration-architect` | Event-driven, SQS/SNS/Kafka, CDC, orchestration |
-| `project-memory-keeper` | README / CONTEXT / ADR sync |
+| `postgres-dba` | PostgreSQL DBA — tuning, replicação, HA, troubleshooting |
+| `project-memory-keeper` | Trio `.claude/memory/{business,architecture,guidelines}.md` + READMEs + ADRs |
+| `security-specialist` | AppSec/DevSecOps — OWASP Top 10, CWE Top 25, STRIDE, release-gate |
 | `senior-product-owner` | User stories, OKRs, priorização de backlog |
 | `senior-react-developer` | React, hooks, state, acessibilidade, testes |
 | `system-architect` | Arquitetura, ADRs, C4, análise de trade-offs |
@@ -295,9 +298,12 @@ Slash commands instalados em `~/.claude/commands/` — invoque com `/<nome>`:
 |---|---|
 | `/api-contract` | Gerar OpenAPI spec ou validar contratos entre serviços |
 | `/arch-design` | Design arquitetural — diagramas C4, ADRs, análise de trade-offs |
+| `/bootstrap-project` | Escaneia o repo, detecta stack e cria `.claude/memory/{business,architecture,guidelines}.md` + `docs/{adr,todo,done}/` |
+| `/bug-flow` | Orquestração de bug: triage → RCA → fix + teste de regressão → security gate → commit |
 | `/code-review` | Revisão de PR ou diff — security, correctness, performance, testing |
 | `/db-audit` | Auditoria de schema, índices, FKs, migrations, queries e segurança de banco |
 | `/discovery` | Product discovery — problem framing, JTBD, assumptions, experimentos, go/no-go |
+| `/feature-flow` | Orquestração de feature: PO → Arquiteto → (Threat-model) → Dev → QA → Security gate → Review → Commit |
 | `/jira-story` | Redigir ou refinar user stories com critérios de aceite e cenários de teste |
 | `/onboard-dev` | Gerar `ONBOARDING.md` completo pra novos devs do projeto |
 | `/smart-commit` | Analisar diff e criar Conventional Commit com type/scope corretos |
