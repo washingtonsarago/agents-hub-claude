@@ -330,6 +330,35 @@ Assim que o PR for mergeado, todos os devs com `ahc` instalado vão receber a at
 
 ---
 
+## Convenções de redação (agents & commands)
+
+Para manter o hub coerente, todo agent ou command novo segue:
+
+### Idioma
+
+- **Agent-facing (instruções pro modelo) → inglês.** O corpo do `.md` que descreve missão, princípios, workflow, regras, anti-patterns e protocolo de colaboração é sempre em inglês. Modelos respondem melhor a prompts em inglês e o vocabulário técnico (BLOCKER, OWASP, CWE, ADR, etc.) já é inglês.
+- **User-facing (output que o usuário lê / textos que o agent fala de volta) → português.** Mensagens, perguntas, exemplos de prompt no `description`, templates de relatório que o agent vai exibir pro dev brasileiro — em PT-BR.
+- **Docs do hub (`README.md`, `docs/USAGE.md`) → português.** Audiência são os devs da EMS-NCTECH.
+
+> Os commands antigos foram escritos antes dessa regra ficar explícita e podem ter output em inglês — vão ser migrados em sweep separado. Commands novos (`/feature-flow`, `/bug-flow`, `/bootstrap-project`) já seguem.
+
+### Frontmatter (agents)
+
+Campos obrigatórios:
+- `name` — kebab-case, igual ao nome do arquivo (sem `.md`)
+- `description` — string JSON-escapada com 1 linha de explicação + 3–5 exemplos `user: ... → launch <agent> ...` (esses exemplos podem estar em PT)
+- `model` — `opus` | `sonnet` | `haiku`
+- `color` — qualquer cor (visual)
+
+Campo recomendado (introduzido em 2026-05):
+- `tier` — `reasoning` | `speed`. Meta-info pra orquestração e decisão de custo. `reasoning` = decisões complexas (PO, arquitetura, segurança, design). `speed` = execução rotineira (implementação, testes, formatação, sync de docs).
+
+### Memória do projeto
+
+Agents que precisam de contexto persistente do projeto **leem e escrevem em `.claude/memory/{business,architecture,guidelines}.md`** via `project-memory-keeper`, não em arquivos próprios. Se um agent precisa de uma seção que não cabe em nenhum dos três, levante uma issue antes de criar arquivo novo.
+
+---
+
 ## Estrutura do repo
 
 ```
