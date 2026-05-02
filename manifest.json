@@ -53,6 +53,14 @@
       "description": "Event-driven, SQS/SNS/Kafka, CDC, orchestration"
     },
     {
+      "name": "nodejs-backend-architect",
+      "version": "1.0.0",
+      "path": "agents/nodejs-backend-architect.md",
+      "sha256": "28bfc88f63545c44502846242a66be0ea9163dd92ed02bc2ce927d1ecfa965d5",
+      "scope": "user",
+      "description": "Node.js TS-first — Fastify/Express/NestJS, Prisma/Drizzle, Zod, async, observability"
+    },
+    {
       "name": "postgres-dba",
       "version": "2.3.0",
       "path": "agents/postgres-dba.md",
@@ -67,6 +75,14 @@
       "sha256": "812a891ebd499b4bc555c5f1131c1bf2af89b4626c0f1f814c532178aa28888f",
       "scope": "user",
       "description": "Owns the .claude/memory trio (business/architecture/guidelines), READMEs, CONTEXT.md, and ADRs"
+    },
+    {
+      "name": "python-engineer",
+      "version": "1.0.0",
+      "path": "agents/python-engineer.md",
+      "sha256": "70f259fbcbcd43b55ea9b8073e850025db3d3b3c2fac0da4badf8a7f6d4bc64c",
+      "scope": "user",
+      "description": "Python idiomático — FastAPI/Django, Pydantic v2, async, pytest+hypothesis, polars, packaging com uv"
     },
     {
       "name": "security-specialist",

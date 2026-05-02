@@ -74,7 +74,7 @@ Depois recarrega: `source ~/.zshrc`.
 ahc list
 ```
 
-Deve listar os 12 agents + 12 commands com status `local:X.Y.Z   remote:X.Y.Z`.
+Deve listar os 14 agents + 12 commands com status `local:X.Y.Z   remote:X.Y.Z`.
 
 ---
 
@@ -283,8 +283,10 @@ Lista atual (ver `manifest.json` para versões e hashes):
 | `go-sdet-backend` | Go SDET — testes, coverage, race, fuzz |
 | `go-senior-engineer` | Go senior — concurrency, gRPC, microservices |
 | `integration-architect` | Event-driven, SQS/SNS/Kafka, CDC, orchestration |
+| `nodejs-backend-architect` | Node.js TS-first — Fastify/Express/NestJS, Prisma/Drizzle, Zod |
 | `postgres-dba` | PostgreSQL DBA — tuning, replicação, HA, troubleshooting |
 | `project-memory-keeper` | Trio `.claude/memory/{business,architecture,guidelines}.md` + READMEs + ADRs |
+| `python-engineer` | Python idiomático — FastAPI/Django, Pydantic v2, async, pytest, polars |
 | `security-specialist` | AppSec/DevSecOps — OWASP Top 10, CWE Top 25, STRIDE, release-gate |
 | `senior-product-owner` | User stories, OKRs, priorização de backlog |
 | `senior-react-developer` | React, hooks, state, acessibilidade, testes |

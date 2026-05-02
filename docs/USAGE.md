@@ -56,6 +56,24 @@ Este guia mostra **o que cada agent/command faz**, **quando acionar**, e **exemp
 - "Acabei de escrever `ParallelOrchestrate` em `internal/gateway/service/orchestrator.go`. Revise e escreva testes (unit + race + fuzz onde fizer sentido)."
 - "Nosso coverage em `internal/transform/` está em 62%. Liste os gaps críticos e escreva os testes faltantes."
 
+### nodejs-backend-architect
+**O que faz:** Node.js TS-first — Fastify/Express/NestJS, Prisma/Drizzle, Zod, async patterns, observabilidade, testes.
+**Quando usar:** novo serviço Node, revisão de handler/middleware, debug de event-loop bloqueado, migração JS→TS, decisão de framework.
+**Exemplos:**
+- "Scaffold um serviço Fastify pra `/orders` com Prisma + Postgres + validação Zod + integration tests."
+- "Revise nosso middleware de auth em `src/middleware/auth.ts` — tipagem do `req.user` está como `any`."
+- "Estamos com event loop bloqueado em prod (p99 = 8s). Diagnostique com clinic.js."
+- "Express ou Fastify ou NestJS pro novo projeto? Squad de 5, foco em throughput."
+
+### python-engineer
+**O que faz:** Python idiomático e tipado — FastAPI/Django, Pydantic v2, async (asyncio/httpx), pytest + hypothesis, polars vs pandas, packaging (uv).
+**Quando usar:** novo serviço/script Python, refactor pra type strict, perf (memória/CPU), testes property-based, escolha de stack.
+**Exemplos:**
+- "Crie um serviço FastAPI pra `/orders` com SQLAlchemy 2.x async + Pydantic v2 + Alembic + pytest."
+- "Revise `src/payments/processor.py` — está difícil de testar e tem `try/except Exception` em 3 lugares."
+- "Tenho um script que processa 5GB de CSV e estoura memória. Diagnostique e refatore (chunking ou polars)."
+- "Adicione testes property-based com hypothesis pra `parse_invoice()`."
+
 ### integration-architect
 **O que faz:** arquitetura event-driven, SQS/SNS/EventBridge/Kafka, CDC (Debezium), Step Functions, Airflow.
 **Quando usar:** decidir padrão de integração, desenhar pipeline, desacoplar serviços, CDC.
