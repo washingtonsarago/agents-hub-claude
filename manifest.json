@@ -22,9 +22,9 @@
     },
     {
       "name": "dotnet-backend-architect",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "path": "agents/dotnet-backend-architect.md",
-      "sha256": "6a6be9bd5ff99d203554987a0a0b42ec15fea0808d8bda53b28fa9056c82cbf1",
+      "sha256": "292850144be09755da261617788010ee8124161358c9fb8b16740b8bc135da42",
       "scope": "user",
       "description": ".NET / ASP.NET Core / DDD / CQRS (native, no MediatR)"
     },
@@ -112,9 +112,9 @@
     },
     {
       "name": "code-review",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "path": "commands/code-review.md",
-      "sha256": "325d3e04ed80ee3bab202b937a4978d19ff4eb58399b2eaef6fc0b53edc0f3e4",
+      "sha256": "b6328b0cdc0499752b9f65d266b446fd6ad6a2cb631b366091be748ac670df1f",
       "scope": "user",
       "description": "PR or diff review — security, correctness, performance, testing"
     },
@@ -160,9 +160,9 @@
     },
     {
       "name": "tech-debt",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "path": "commands/tech-debt.md",
-      "sha256": "d658cc9ee9052912f25337025fe96008a60acf197319ba0d19bfa099883d7998",
+      "sha256": "fd43d08d086643f1301c459966fa24467f69c16e655199183127dfd1d5af12f3",
       "scope": "user",
       "description": "Scan and classify technical debt with prioritized action plan"
     }
