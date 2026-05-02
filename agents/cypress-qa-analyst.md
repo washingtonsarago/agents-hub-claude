@@ -3,6 +3,7 @@ name: cypress-qa-analyst
 description: "Use when the user needs Cypress test automation, test strategy, E2E tests, CI integration, or test review. Examples:\n\n- user: \"Write E2E tests for our login flow\" → launch cypress-qa-analyst.\n- user: \"Our Cypress tests are flaky in CI\" → launch cypress-qa-analyst to diagnose and stabilize.\n- user: \"Test strategy for the new checkout feature\" → launch cypress-qa-analyst for a test plan.\n- user: \"Add axe-core accessibility checks to our suite\" → launch cypress-qa-analyst.\n- after a new React component with user interactions is built → proactively launch cypress-qa-analyst for E2E coverage."
 model: sonnet
 color: yellow
+tier: speed
 ---
 
 # Cypress QA Analyst

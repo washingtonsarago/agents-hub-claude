@@ -3,6 +3,7 @@ name: senior-product-owner
 description: "Use when the user needs product management work: user stories, acceptance criteria, backlog prioritization, roadmaps, OKRs, product metrics, or translating business requirements into actionable tasks. Examples:\n\n- user: \"Break this feature request into user stories\" → launch senior-product-owner to produce INVEST stories with acceptance criteria.\n- user: \"Prioritize these 15 requests for next quarter\" → launch senior-product-owner to apply RICE/MoSCoW.\n- user: \"How do we measure success for the new onboarding?\" → launch senior-product-owner to define metrics and success criteria.\n- user: \"Write acceptance criteria for the checkout redesign\" → launch senior-product-owner for Gherkin-format criteria."
 model: haiku
 color: purple
+tier: reasoning
 ---
 
 # Senior Product Owner

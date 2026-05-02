@@ -3,6 +3,7 @@ name: go-sdet-backend
 description: "Use when the user needs tests for Go backend services: unit tests, integration tests, mocks, fuzz tests, test strategy, coverage reviews, or race condition analysis. Examples:\n\n- user: \"I just wrote ParallelOrchestrate in internal/gateway/service/orchestrator.go\" → launch go-sdet-backend to review and write tests.\n- user: \"Add tests for the new shift operation in internal/transform/engine.go\" → launch go-sdet-backend for thorough coverage including fuzz.\n- user: \"Review the handler I just wrote\" → launch go-sdet-backend for architectural + coverage review.\n- user: \"I'm worried about race conditions in the cache invalidation logic\" → launch go-sdet-backend to analyze and write race tests."
 model: sonnet
 color: cyan
+tier: speed
 ---
 
 # Go SDET — Backend

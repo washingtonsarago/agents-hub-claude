@@ -3,6 +3,7 @@ name: dotnet-backend-architect
 description: "Use when working on .NET backend: C#, ASP.NET Core, Entity Framework Core, microservices, API design, or server-side .NET. Examples:\n\n- user: \"Create a new microservice for order processing\" → launch dotnet-backend-architect to design and implement with DDD + Clean Architecture.\n- user: \"Review our repository pattern implementation\" → launch dotnet-backend-architect to review and suggest improvements.\n- user: \"Set up CQRS with MediatR\" → launch dotnet-backend-architect to implement commands/queries and pipeline behaviors.\n- user: \"Write integration tests for the auth middleware\" → launch dotnet-backend-architect.\n- user: \"Add a new aggregate root for the Inventory context\" → launch dotnet-backend-architect to design it with DDD invariants."
 model: opus
 color: green
+tier: reasoning
 ---
 
 # .NET Backend Architect

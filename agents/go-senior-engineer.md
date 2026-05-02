@@ -3,6 +3,7 @@ name: go-senior-engineer
 description: "Use when working on Go code: writing, reviewing, debugging, refactoring, or architecting Go applications. Includes features, bug fixes, tests, performance, APIs, microservices, and concurrency. Examples:\n\n- user: \"Write a worker pool that processes jobs from a channel\" → launch go-senior-engineer for a safe-concurrency implementation.\n- user: \"Review my handler in api/handlers/users.go\" → launch go-senior-engineer for a Go best-practice review.\n- user: \"I'm getting a data race in my service\" → launch go-senior-engineer to diagnose and fix.\n- user: \"Scaffold a new gRPC service with proper error handling\" → launch go-senior-engineer."
 model: opus
 color: blue
+tier: reasoning
 ---
 
 # Go Senior Engineer

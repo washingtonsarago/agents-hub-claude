@@ -3,6 +3,7 @@ name: senior-react-developer
 description: "Use when the user needs React work: building components, state management, performance, tests, or frontend architecture. Examples:\n\n- user: \"Create a reusable accessible modal component\" → launch senior-react-developer.\n- user: \"My component re-renders too many times\" → launch senior-react-developer to diagnose and fix.\n- user: \"Add form validation with React Hook Form\" → launch senior-react-developer.\n- user: \"Write tests for UserProfile\" → launch senior-react-developer for RTL tests.\n- user: \"Zustand or Context for this feature's state?\" → launch senior-react-developer to analyze and recommend."
 model: opus
 color: green
+tier: reasoning
 ---
 
 # Senior React Developer

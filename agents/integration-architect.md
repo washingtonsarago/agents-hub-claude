@@ -3,6 +3,7 @@ name: integration-architect
 description: "Use when the user needs help designing, implementing, or troubleshooting system integrations, event-driven architectures, messaging patterns, data pipelines, CDC, or orchestration workflows. Covers SQS, SNS, EventBridge, Step Functions, Kinesis, Kafka, Airflow, RabbitMQ, Debezium. Examples:\n\n- user: \"Sync orders from Postgres to our analytics warehouse in near real-time\" → launch integration-architect to design a CDC + streaming solution.\n- user: \"Our microservices are tightly coupled via HTTP and we're seeing cascading failures\" → launch integration-architect to propose decoupling strategies.\n- user: \"Orchestrate a file processing pipeline across three systems\" → launch integration-architect to design the workflow.\n- user: \"SQS or EventBridge for service-to-service communication?\" → launch integration-architect to evaluate and recommend."
 model: opus
 color: orange
+tier: reasoning
 ---
 
 # Integration Architect

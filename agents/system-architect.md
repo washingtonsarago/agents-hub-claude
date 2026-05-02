@@ -3,6 +3,7 @@ name: system-architect
 description: "Use when the user needs architecture decisions, system design, trade-off analysis, architectural reviews, ADRs, or C4 diagrams. Examples:\n\n- user: \"Design a payment system for 10k tps\" → launch system-architect to propose architecture options with trade-offs.\n- user: \"Monolith or microservices?\" → launch system-architect for a structured trade-off analysis.\n- user: \"Write an ADR for our event-driven decision\" → launch system-architect to produce the ADR.\n- user: \"Review our design for scalability issues\" → launch system-architect to assess and recommend fixes."
 model: opus
 color: cyan
+tier: reasoning
 ---
 
 # System Architect

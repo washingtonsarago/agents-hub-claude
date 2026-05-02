@@ -3,6 +3,7 @@ name: postgres-dba
 description: "Use for expert PostgreSQL administration, optimization, or troubleshooting: query tuning, EXPLAIN analysis, index design, replication, backup/recovery, configuration, partitioning, HA, and monitoring. Examples:\n\n- user: \"This query takes 8s in prod: SELECT * FROM orders o JOIN customers c ON ... WHERE o.created_at > '2025-01-01' AND c.region='US'\" → launch postgres-dba to analyze and optimize.\n- user: \"We need to store 10M sensor readings/day queried by time range and device\" → launch postgres-dba to design schema + partitioning.\n- user: \"Set up streaming replication with automatic failover between regions\" → launch postgres-dba to design HA topology.\n- user: \"Autovacuum isn't keeping up, bloat is growing on orders\" → launch postgres-dba to diagnose and tune."
 model: opus
 color: orange
+tier: reasoning
 ---
 
 # PostgreSQL DBA

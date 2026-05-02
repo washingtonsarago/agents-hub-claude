@@ -6,49 +6,49 @@
   "agents": [
     {
       "name": "aws-devops-engineer",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "path": "agents/aws-devops-engineer.md",
-      "sha256": "37c21e24f74d31c09028f22dae8d82689e087abaf3bcc4ba58e8f1f734b2a9cd",
+      "sha256": "1d668d396f7a5210cc23aa601a7a3e7d371784e1a12cf3d19b7af4d9e2cc8d52",
       "scope": "user",
       "description": "AWS infra, CI/CD, Terraform, EKS, observability"
     },
     {
       "name": "cypress-qa-analyst",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "path": "agents/cypress-qa-analyst.md",
-      "sha256": "25262e70fdb8198f3825bc0e9122943328a33e15e270f95ebef6468a1d17b184",
+      "sha256": "7a307d3e9f9eb5f6523ad3bac3cc1c2d2d1e0bde78d5e59c95ce226ccb99fd41",
       "scope": "user",
       "description": "Cypress E2E, test strategy, CI integration"
     },
     {
       "name": "dotnet-backend-architect",
-      "version": "2.1.1",
+      "version": "2.1.2",
       "path": "agents/dotnet-backend-architect.md",
-      "sha256": "292850144be09755da261617788010ee8124161358c9fb8b16740b8bc135da42",
+      "sha256": "ade6c69d9bb1a11fc3a293e396108c7ce182cac7be69b5e8ee8aa76a7d00f9cd",
       "scope": "user",
       "description": ".NET / ASP.NET Core / DDD / CQRS (native, no MediatR)"
     },
     {
       "name": "go-sdet-backend",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "path": "agents/go-sdet-backend.md",
-      "sha256": "b664c7b2339822684e81fae5d1b83bdb958a3098838f8eb072b425cc02d28fac",
+      "sha256": "ca108e7ba97127c50a58026bf2a0c7632d3c5fddb8e3712df3975159b8e0f689",
       "scope": "user",
       "description": "Go SDET — tests, coverage, race conditions, quality"
     },
     {
       "name": "go-senior-engineer",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "path": "agents/go-senior-engineer.md",
-      "sha256": "04724b62a6000ae783cb59fe894c3021f380225533709470e4aedcb80b2602e9",
+      "sha256": "7bb1a03629e42d4f5656f783c93f15ac68c040ef86016fc8bcb792a896669de0",
       "scope": "user",
       "description": "Go senior — concurrency, gRPC, microservices"
     },
     {
       "name": "integration-architect",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "path": "agents/integration-architect.md",
-      "sha256": "b17e82a943e5282460d57313c176a9f6dbe368735068d75de146dbc35f171d6a",
+      "sha256": "617be430b49b46602e2d44bda4e0f3e298500ca6d1dfb9c18a57c94040b6f312",
       "scope": "user",
       "description": "Event-driven, SQS/SNS/Kafka, CDC, orchestration"
     },
@@ -62,9 +62,9 @@
     },
     {
       "name": "postgres-dba",
-      "version": "2.3.0",
+      "version": "2.3.1",
       "path": "agents/postgres-dba.md",
-      "sha256": "fe5ad9aed4d1093f2149ec982e3d991d2b05c84ef582f2e793037478af7b8c21",
+      "sha256": "b2649124be170c3288cb021c3ca33369a931ba1e3dbaf838e67de593c108ad3f",
       "scope": "user",
       "description": "PostgreSQL DBA — tuning, replication, HA, troubleshooting"
     },
@@ -94,25 +94,25 @@
     },
     {
       "name": "senior-product-owner",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "path": "agents/senior-product-owner.md",
-      "sha256": "e05e5c12f40b5f296b994e81c7b958f317d6ae8ed63d5a8434195356bc276a5e",
+      "sha256": "e87cd3ce6fcd058b558f2ef766c77e862fb358ad6ef1ea5bb5f79d4cc9b3ea0c",
       "scope": "user",
       "description": "User stories, OKRs, backlog prioritization"
     },
     {
       "name": "senior-react-developer",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "path": "agents/senior-react-developer.md",
-      "sha256": "20c5f93b1025bb69f40a27b87845bd54d1d2616cb6fe954a883d8143d0476425",
+      "sha256": "6a4b4a036379a219fbb9cb23f50a33ee2bf04494c4f8d76bc6e030d0f7e9949f",
       "scope": "user",
       "description": "React, hooks, state, accessibility, testing"
     },
     {
       "name": "system-architect",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "path": "agents/system-architect.md",
-      "sha256": "d255471e4722c72ccbca36e29d7ca314f2af9f59e194ad1b489f092f18fe0f15",
+      "sha256": "a74e25d07e0a4146e0da62b2efc24a36c7d72a58e74d978c305c3a542f9631f0",
       "scope": "user",
       "description": "Architecture, ADRs, C4, trade-off analysis"
     }

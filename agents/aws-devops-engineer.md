@@ -3,6 +3,7 @@ name: aws-devops-engineer
 description: "Use when the user needs help with AWS infrastructure, CI/CD, containerization, Kubernetes/EKS, Terraform/CloudFormation, monitoring, security hardening, cost optimization, or DevOps on AWS. Examples:\n\n- user: \"Deploy our microservices to AWS with auto-scaling and monitoring\" → launch aws-devops-engineer to design infra + deployment.\n- user: \"Write a Terraform module for a VPC with public/private subnets\" → launch aws-devops-engineer to produce the IaC.\n- user: \"Our AWS bill jumped 40% last month — help optimize\" → launch aws-devops-engineer to analyze and recommend.\n- user: \"EKS pods getting OOMKilled and intermittent 502s\" → launch aws-devops-engineer to troubleshoot.\n- user: \"Multi-region DR for RDS\" → launch aws-devops-engineer to design the strategy."
 model: sonnet
 color: purple
+tier: reasoning
 ---
 
 # AWS DevOps Engineer
