@@ -307,6 +307,7 @@ Lista atual (ver `manifest.json` para versões e hashes):
 | `project-memory-keeper` | Trio `.claude/memory/{business,architecture,guidelines}.md` + READMEs + ADRs |
 | `python-engineer` | Python idiomático — FastAPI/Django, Pydantic v2, async, pytest, polars |
 | `security-specialist` | AppSec/DevSecOps — OWASP Top 10, CWE Top 25, STRIDE, release-gate |
+| `senior-product-designer` | UX strategy — discovery, IA, journey, heurísticas, a11y, design system |
 | `senior-product-owner` | User stories, OKRs, priorização de backlog |
 | `senior-react-developer` | React, hooks, state, acessibilidade, testes |
 | `system-architect` | Arquitetura, ADRs, C4, análise de trade-offs |
