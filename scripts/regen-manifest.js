@@ -9,7 +9,8 @@
 //   - For each new file/skill: adds entry at v1.0.0 with description from
 //     SKILL.md / agent-frontmatter (first sentence before the first \n).
 //   - For each missing entry (in manifest but not in fs): removes it.
-//   - Always sets updated_at to today's ISO date (UTC).
+//   - Sets updated_at to today's ISO date (UTC) only when content actually
+//     changed; otherwise preserves the existing value to avoid daily churn.
 //   - Output is sorted alphabetically by name within each category.
 //
 // Flags:
@@ -227,7 +228,7 @@ function main() {
   const next = {
     version: current.version || 1,
     channel: current.channel || 'stable',
-    updated_at: todayUTC(),
+    updated_at: current.updated_at,
     repo: current.repo,
   };
 
@@ -258,14 +259,12 @@ function main() {
     totalChanges += skillsResult.changes.length;
   }
 
-  if (current.updated_at !== next.updated_at) {
-    totalChanges++;
-  }
-
   if (totalChanges === 0) {
     console.log('manifest is up to date — no changes');
     process.exit(0);
   }
+
+  next.updated_at = todayUTC();
 
   if (FLAGS.check) {
     console.error(`\n[check] manifest would change (${totalChanges} updates) — run \`node scripts/regen-manifest.js\` and commit`);
