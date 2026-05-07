@@ -93,7 +93,7 @@ Depois recarrega: `source ~/.zshrc`.
 ahc list
 ```
 
-Deve listar os 14 agents + 14 commands + 4 skills com status `local:X.Y.Z   remote:X.Y.Z`.
+Deve listar os 18 agents + 14 commands + 4 skills com status `local:X.Y.Z   remote:X.Y.Z`.
 
 ---
 
@@ -297,10 +297,12 @@ Lista atual (ver `manifest.json` para versões e hashes):
 | Agent | Uso |
 |---|---|
 | `aws-devops-engineer` | Infra AWS, CI/CD, Terraform, EKS, observabilidade |
+| `cache-search-engineer` | Cache (Redis/Memcached/ElastiCache) e search (Elasticsearch/OpenSearch) — patterns, invalidação, stampede, relevância, mapping/sharding |
 | `cypress-qa-analyst` | Cypress E2E, estratégia de teste, CI integration |
 | `dotnet-backend-architect` | .NET / ASP.NET Core / DDD / CQRS |
 | `go-sdet-backend` | Go SDET — testes, coverage, race, fuzz |
 | `go-senior-engineer` | Go senior — concurrency, gRPC, microservices |
+| `infra-cost-estimator` | Estimativa de custo de infra, TCO, comparação de cenários, FinOps, build-vs-buy com sensibilidade |
 | `integration-architect` | Event-driven, SQS/SNS/Kafka, CDC, orchestration |
 | `nodejs-backend-architect` | Node.js TS-first — Fastify/Express/NestJS, Prisma/Drizzle, Zod |
 | `postgres-dba` | PostgreSQL DBA — tuning, replicação, HA, troubleshooting |
@@ -311,6 +313,7 @@ Lista atual (ver `manifest.json` para versões e hashes):
 | `senior-product-owner` | User stories, OKRs, priorização de backlog |
 | `senior-react-developer` | React, hooks, state, acessibilidade, testes |
 | `system-architect` | Arquitetura, ADRs, C4, análise de trade-offs |
+| `technical-writer` | Documentação user-facing — Diátaxis, getting-started, tutorials, how-tos, migration guides |
 
 ## Commands disponíveis
 

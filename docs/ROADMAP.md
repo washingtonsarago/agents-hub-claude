@@ -9,12 +9,12 @@ Documento de iniciativas futuras pro hub. Origem: discussões entre Washington (
 
 ## Estado atual (snapshot de 2026-05-02)
 
-- **14 agents + 14 commands + 4 skills**, distribuídos via `ahc sync` no `SessionStart` hook do Claude Code
+- **18 agents + 14 commands + 4 skills**, distribuídos via `ahc sync` no `SessionStart` hook do Claude Code
 - CLI `ahc` zero-deps + manifest com sha256 por arquivo
 - 2 GitHub Actions: `regen-manifest` (CI gate) e `test.yml` (validator + 31 testes)
 - `scripts/regen-manifest.js` + `scripts/validate-artifacts.js`
 - Convenções documentadas no README: idioma, frontmatter, memória trio
-- `tier:` metadata em todos os 14 agents (dívida zerada)
+- `tier:` metadata em todos os 18 agents (dívida zerada)
 - Sweep PT-BR concluído nos commands antigos (dívida zerada)
 - Diagrama de arquitetura em `docs/architecture/agents-hub-claude.png`
 - Validator: **0 errors, 0 warnings**
@@ -364,7 +364,7 @@ Vindas do brainstorm anterior. Atacar conforme demanda real do time:
 
 **Problema.** Hub só serve Claude Code hoje. Cursor, Zed, Continue não conseguem consumir.
 
-**Solução.** Empacotar um MCP server que expõe os 14 agents + 14 commands + 4 skills via Model Context Protocol. Qualquer cliente MCP-compatível ganha o arsenal.
+**Solução.** Empacotar um MCP server que expõe os 18 agents + 14 commands + 4 skills via Model Context Protocol. Qualquer cliente MCP-compatível ganha o arsenal.
 
 **Esforço:** ~3 dias.
 

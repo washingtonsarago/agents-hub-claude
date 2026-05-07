@@ -3,6 +3,7 @@ name: senior-product-designer
 description: "Use when the user needs UX strategy and product design work: discovery, user research, information architecture, journey mapping, wireframes, prototypes, usability heuristics, design system decisions, accessibility audits, or measuring design outcomes. Examples:\n\n- user: \"We have a vague request for a new dashboard — help shape it\" → launch senior-product-designer for discovery framing and IA.\n- user: \"Our checkout drops 40% at step 3 — what should we redesign?\" → launch senior-product-designer to diagnose with heuristics + flow analysis and propose alternatives.\n- user: \"Run a heuristic evaluation on this screen\" → launch senior-product-designer for a Nielsen 10 + WCAG 2.1 AA audit.\n- user: \"Build a journey map for the onboarding flow\" → launch senior-product-designer to produce a phased map with emotions, pains, opportunities.\n- user: \"Should this be a modal, a side panel, or a separate page?\" → launch senior-product-designer for an interaction trade-off analysis."
 model: opus
 color: pink
+tier: reasoning
 ---
 
 # Senior Product Designer

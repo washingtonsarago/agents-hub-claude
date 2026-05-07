@@ -1,7 +1,7 @@
 {
   "version": 1,
   "channel": "stable",
-  "updated_at": "2026-05-05",
+  "updated_at": "2026-05-07",
   "repo": "EMS-NCTECH/agents-hub-claude",
   "agents": [
     {
@@ -11,6 +11,14 @@
       "sha256": "1d668d396f7a5210cc23aa601a7a3e7d371784e1a12cf3d19b7af4d9e2cc8d52",
       "scope": "user",
       "description": "AWS infra, CI/CD, Terraform, EKS, observability"
+    },
+    {
+      "name": "cache-search-engineer",
+      "version": "1.0.0",
+      "path": "agents/cache-search-engineer.md",
+      "sha256": "5f63a990c1c5248a76b4f20cd53425e9e5dcc459797d6f8a158be87694217b50",
+      "scope": "user",
+      "description": "Use when the user needs cache strategy (Redis/Memcached/ElastiCache) or search engineering (Elasticsearch/OpenSearch) decisions: cache pattern selection, invali"
     },
     {
       "name": "cypress-qa-analyst",
@@ -43,6 +51,14 @@
       "sha256": "7bb1a03629e42d4f5656f783c93f15ac68c040ef86016fc8bcb792a896669de0",
       "scope": "user",
       "description": "Go senior — concurrency, gRPC, microservices"
+    },
+    {
+      "name": "infra-cost-estimator",
+      "version": "1.0.0",
+      "path": "agents/infra-cost-estimator.md",
+      "sha256": "8c1e3cde37f49108673ee44e25a43067ad496ba20fb944acd77bd6624a3d406c",
+      "scope": "user",
+      "description": "Use when the user needs infrastructure cost estimation, TCO modeling, scenario comparison, FinOps analysis, or cost-driven architecture review. Distinct from aw"
     },
     {
       "name": "integration-architect",
@@ -94,9 +110,9 @@
     },
     {
       "name": "senior-product-designer",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "agents/senior-product-designer.md",
-      "sha256": "448c8cb8de3a8670bb3b4976b5cb4282ac22d256734852d574de95fd41badac1",
+      "sha256": "f8788e8faed7ed68ac7651914bf896cb3ef729319eccd9db6c585ed604add338",
       "scope": "user",
       "description": "UX strategy & product design — discovery, IA, journey, heuristics, a11y, design system"
     },
@@ -123,6 +139,14 @@
       "sha256": "a74e25d07e0a4146e0da62b2efc24a36c7d72a58e74d978c305c3a542f9631f0",
       "scope": "user",
       "description": "Architecture, ADRs, C4, trade-off analysis"
+    },
+    {
+      "name": "technical-writer",
+      "version": "1.0.0",
+      "path": "agents/technical-writer.md",
+      "sha256": "98fe26a188d242fddd813f799cb25dc6f0b2e399b3e79cfd81046b4ddf118319",
+      "scope": "user",
+      "description": "Use when the user needs end-user-facing documentation: API reference polish, getting-started guides, tutorials, knowledge-base articles, README rewrites, migrat"
     }
   ],
   "commands": [
