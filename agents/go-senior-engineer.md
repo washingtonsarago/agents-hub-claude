@@ -4,6 +4,7 @@ description: "Use when working on Go code: writing, reviewing, debugging, refact
 model: opus
 color: blue
 tier: reasoning
+team: backend
 ---
 
 # Go Senior Engineer

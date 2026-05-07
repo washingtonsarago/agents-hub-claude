@@ -2,3 +2,9 @@
 .DS_Store
 node_modules/
 *.log
+
+# Office lockfiles (~$Foo.docx, ~$Foo.pptx)
+~$*
+
+# Generated presentation binary (built from EXECUTIVE-PRESENTATION.md via scripts/build-presentation.py)
+docs/*.pptx

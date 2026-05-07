@@ -4,6 +4,7 @@ description: "Use when the user needs React work: building components, state man
 model: opus
 color: green
 tier: reasoning
+team: frontend
 ---
 
 # Senior React Developer

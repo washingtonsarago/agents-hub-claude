@@ -4,6 +4,7 @@ description: "Use when the user needs help designing, implementing, or troublesh
 model: opus
 color: orange
 tier: reasoning
+team: integration
 ---
 
 # Integration Architect

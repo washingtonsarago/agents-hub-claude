@@ -4,6 +4,7 @@ description: "Use when the user needs AppSec / DevSecOps work: threat modeling, 
 model: opus
 color: red
 tier: reasoning
+team: security
 ---
 
 # Security Specialist

@@ -4,6 +4,7 @@ description: "Test agent fixture used by tests."
 model: sonnet
 color: blue
 tier: speed
+team: backend
 ---
 
 # Test Agent

@@ -4,6 +4,7 @@ description: "Use when the user needs tests for Go backend services: unit tests,
 model: sonnet
 color: cyan
 tier: speed
+team: qa
 ---
 
 # Go SDET — Backend

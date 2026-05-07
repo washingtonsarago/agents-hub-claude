@@ -75,6 +75,14 @@ function extractDescription(text) {
   return firstLine.slice(0, 160);
 }
 
+function extractFrontmatterField(text, field) {
+  const fmMatch = text.match(/^---\s*\n([\s\S]*?)\n---/);
+  if (!fmMatch) return null;
+  const re = new RegExp(`^${field}:\\s*(.+)$`, 'm');
+  const m = fmMatch[1].match(re);
+  return m ? m[1].trim() : null;
+}
+
 function scanCategory(cat) {
   const dirPath = path.join(REPO_ROOT, cat.dir);
   if (!fs.existsSync(dirPath)) return [];
@@ -85,12 +93,18 @@ function scanCategory(cat) {
       const full = path.join(dirPath, f);
       const buf = fs.readFileSync(full);
       const text = buf.toString('utf8');
-      return {
+      const entry = {
         name: f.replace(/\.md$/, ''),
         path: `${cat.dir}/${f}`,
         sha256: sha256(buf),
         description: extractDescription(text),
       };
+      // Only agents carry a team bucket today.
+      if (cat.dir === 'agents') {
+        const team = extractFrontmatterField(text, 'team');
+        if (team) entry.team = team;
+      }
+      return entry;
     });
 }
 
@@ -184,6 +198,11 @@ function reconcileCategory(cat, currentManifest) {
 
   for (const fsItem of fsItems) {
     const existing = byName.get(fsItem.name);
+    // Side-channel fields propagated from frontmatter regardless of sha drift
+    // (so renaming a team in the .md doesn't require a version bump).
+    const sideChannel = {};
+    if (fsItem.team) sideChannel.team = fsItem.team;
+
     if (!existing) {
       result.push({
         name: fsItem.name,
@@ -192,6 +211,7 @@ function reconcileCategory(cat, currentManifest) {
         sha256: fsItem.sha256,
         scope: 'user',
         description: fsItem.description || `(no description) — please edit manifest`,
+        ...sideChannel,
       });
       changes.push({ kind: 'added', name: fsItem.name, version: '1.0.0' });
     } else if (existing.sha256 !== fsItem.sha256) {
@@ -201,13 +221,14 @@ function reconcileCategory(cat, currentManifest) {
         version: newVersion,
         path: fsItem.path,
         sha256: fsItem.sha256,
+        ...sideChannel,
       });
       changes.push({
         kind: 'updated', name: fsItem.name,
         from: existing.version, to: newVersion,
       });
     } else {
-      result.push(existing);
+      result.push({ ...existing, ...sideChannel });
     }
     byName.delete(fsItem.name);
   }
@@ -259,9 +280,18 @@ function main() {
     totalChanges += skillsResult.changes.length;
   }
 
-  if (totalChanges === 0) {
+  // Detect metadata-only drift (e.g., team field backfill without sha change).
+  // Compare serialized forms without `updated_at` so we don't trip on the date stamp.
+  const stripDate = (m) => { const c = { ...m }; delete c.updated_at; return JSON.stringify(c); };
+  const metadataDrift = stripDate(next) !== stripDate(current);
+
+  if (totalChanges === 0 && !metadataDrift) {
     console.log('manifest is up to date — no changes');
     process.exit(0);
+  }
+
+  if (totalChanges === 0 && metadataDrift) {
+    console.log('manifest metadata drift detected (e.g., team field) — refreshing without version bump');
   }
 
   next.updated_at = todayUTC();

@@ -4,6 +4,7 @@ description: "Use for expert PostgreSQL administration, optimization, or trouble
 model: opus
 color: orange
 tier: reasoning
+team: data
 ---
 
 # PostgreSQL DBA

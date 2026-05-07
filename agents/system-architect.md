@@ -4,6 +4,7 @@ description: "Use when the user needs architecture decisions, system design, tra
 model: opus
 color: cyan
 tier: reasoning
+team: architecture
 ---
 
 # System Architect

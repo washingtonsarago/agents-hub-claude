@@ -4,6 +4,7 @@ description: "Use to generate, update, or synchronize project documentation and 
 model: haiku
 color: cyan
 tier: speed
+team: meta
 ---
 
 # Project Memory Keeper
