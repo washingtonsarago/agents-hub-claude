@@ -1,7 +1,7 @@
 {
   "version": 1,
   "channel": "stable",
-  "updated_at": "2026-05-05",
+  "updated_at": "2026-05-07",
   "repo": "EMS-NCTECH/agents-hub-claude",
   "agents": [
     {
@@ -43,6 +43,14 @@
       "sha256": "7bb1a03629e42d4f5656f783c93f15ac68c040ef86016fc8bcb792a896669de0",
       "scope": "user",
       "description": "Go senior — concurrency, gRPC, microservices"
+    },
+    {
+      "name": "infra-cost-estimator",
+      "version": "1.0.0",
+      "path": "agents/infra-cost-estimator.md",
+      "sha256": "8c1e3cde37f49108673ee44e25a43067ad496ba20fb944acd77bd6624a3d406c",
+      "scope": "user",
+      "description": "Use when the user needs infrastructure cost estimation, TCO modeling, scenario comparison, FinOps analysis, or cost-driven architecture review. Distinct from aw"
     },
     {
       "name": "integration-architect",
