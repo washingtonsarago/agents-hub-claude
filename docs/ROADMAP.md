@@ -11,7 +11,7 @@ Documento de iniciativas futuras pro hub. Origem: discussões entre Washington (
 
 - **18 agents + 14 commands + 4 skills**, distribuídos via `ahc sync` no `SessionStart` hook do Claude Code
 - CLI `ahc` zero-deps + manifest com sha256 por arquivo
-- 2 GitHub Actions: `regen-manifest` (CI gate) e `test.yml` (validator + 31 testes)
+- 2 GitHub Actions: `regen-manifest` (CI gate) e `test.yml` (validator + 33 testes)
 - `scripts/regen-manifest.js` + `scripts/validate-artifacts.js`
 - Convenções documentadas no README: idioma, frontmatter, memória trio
 - `tier:` metadata em todos os 18 agents (dívida zerada)
@@ -430,7 +430,7 @@ Se eu fosse atacar isso pelo Washington, seria nessa ordem:
 **Onda 3 (médio prazo, ~2 semanas):**
 7. Prompt regression suite (item 5.1) — virtuoso e sem precedente
 8. MCP server bundled (item 8.3) — portabilidade estratégica
-9. Tags / discovery (item 6.1) — antes do USAGE.md ficar inviável
+9. Tags / discovery (item 6.2) — antes do USAGE.md ficar inviável
 
 **Backlog perpétuo:** skills do item 8.1 conforme demanda; CLI quality-of-life (3.2/3.3/3.4) conforme dor real surgir.
 
