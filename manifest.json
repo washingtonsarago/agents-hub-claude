@@ -202,9 +202,9 @@
     },
     {
       "name": "code-review",
-      "version": "1.1.1",
+      "version": "1.1.2",
       "path": "commands/code-review.md",
-      "sha256": "89ceec944656ecd012791b1ba02427bd9a8c3c7d95142deddf7408adb80edef3",
+      "sha256": "1eed1a78a20c7c9dcbef7cc6bf2dada7797bdf3929af2d477aae181e3a0c4712",
       "scope": "user",
       "description": "PR or diff review — security, correctness, performance, testing"
     },

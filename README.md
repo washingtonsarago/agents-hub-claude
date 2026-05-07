@@ -368,7 +368,7 @@ Slash commands instalados em `~/.claude/commands/` — invoque com `/<nome>`:
 | `/arch-design` | Design arquitetural — diagramas C4, ADRs, análise de trade-offs |
 | `/bootstrap-project` | Escaneia o repo, detecta stack e cria `.claude/memory/{business,architecture,guidelines}.md` + `docs/{adr,todo,done}/` |
 | `/bug-flow` | Orquestração de bug: triage → RCA → fix + teste de regressão → security gate → commit |
-| `/code-review` | Revisão de PR ou diff — security, correctness, performance, testing |
+| `/code-review` | Revisão multi-reviewer paralela de PR/diff — orquestrador classifica o diff e dispara `system-architect` + `security-specialist` + stack-specifics em paralelo, deduplica e consolida |
 | `/db-audit` | Auditoria de schema, índices, FKs, migrations, queries e segurança de banco |
 | `/discovery` | Product discovery — problem framing, JTBD, assumptions, experimentos, go/no-go |
 | `/feature-flow` | Orquestração de feature: PO → Arquiteto → (Threat-model) → Dev → QA → Security gate → Review → Commit |

@@ -152,7 +152,7 @@ Orquestra um bug ponta-a-ponta: triage → RCA → fix + teste de regressão →
 **Exemplo:** `/bug-flow autovacuum não roda em public.events e bloat passou de 40% — ver thread no Slack #db`
 
 ### `/code-review`
-Revisão profunda de diff/PR: segurança, correção, performance, testes.
+Revisão **multi-reviewer paralela** de diff/PR. O command classifica o diff (Go? SQL? React? Redis? IaC? UI?) e dispara em paralelo os specialistas aplicáveis (`system-architect` + `security-specialist` sempre, mais stack-specifics) — cada um revisa só pela sua lente. Em seguida agrega, deduplica achados sobrepostos e produz um relatório único com veredicto consolidado. Limita a 6 reviewers simultâneos por diff.
 **Exemplo:** `/code-review` (com staged diff) ou `/code-review PR #142`
 
 ### `/db-audit`
