@@ -292,28 +292,71 @@ Toda vez que você abre o Claude Code, o hook roda o sync em background com time
 
 ## Agents disponíveis
 
-Lista atual (ver `manifest.json` para versões e hashes):
+Lista atual agrupada por **time** (ver `manifest.json` para versões e hashes). Cada agent declara seu time na frontmatter (`team: <bucket>`) — a CLI usa isso pra agrupar `ahc list` e o validator garante o enum.
 
+### backend
+| Agent | Uso |
+|---|---|
+| `dotnet-backend-architect` | .NET / ASP.NET Core / DDD / CQRS |
+| `go-senior-engineer` | Go senior — concurrency, gRPC, microservices |
+| `nodejs-backend-architect` | Node.js TS-first — Fastify/Express/NestJS, Prisma/Drizzle, Zod |
+| `python-engineer` | Python idiomático — FastAPI/Django, Pydantic v2, async, pytest, polars |
+
+### frontend
+| Agent | Uso |
+|---|---|
+| `senior-react-developer` | React, hooks, state, acessibilidade, testes |
+
+### data
+| Agent | Uso |
+|---|---|
+| `cache-search-engineer` | Cache (Redis/Memcached/ElastiCache) e search (Elasticsearch/OpenSearch) — patterns, invalidação, stampede, relevância, mapping/sharding |
+| `postgres-dba` | PostgreSQL DBA — tuning, replicação, HA, troubleshooting |
+
+### devops
 | Agent | Uso |
 |---|---|
 | `aws-devops-engineer` | Infra AWS, CI/CD, Terraform, EKS, observabilidade |
-| `cache-search-engineer` | Cache (Redis/Memcached/ElastiCache) e search (Elasticsearch/OpenSearch) — patterns, invalidação, stampede, relevância, mapping/sharding |
-| `cypress-qa-analyst` | Cypress E2E, estratégia de teste, CI integration |
-| `dotnet-backend-architect` | .NET / ASP.NET Core / DDD / CQRS |
-| `go-sdet-backend` | Go SDET — testes, coverage, race, fuzz |
-| `go-senior-engineer` | Go senior — concurrency, gRPC, microservices |
 | `infra-cost-estimator` | Estimativa de custo de infra, TCO, comparação de cenários, FinOps, build-vs-buy com sensibilidade |
+
+### integration
+| Agent | Uso |
+|---|---|
 | `integration-architect` | Event-driven, SQS/SNS/Kafka, CDC, orchestration |
-| `nodejs-backend-architect` | Node.js TS-first — Fastify/Express/NestJS, Prisma/Drizzle, Zod |
-| `postgres-dba` | PostgreSQL DBA — tuning, replicação, HA, troubleshooting |
-| `project-memory-keeper` | Trio `.claude/memory/{business,architecture,guidelines}.md` + READMEs + ADRs |
-| `python-engineer` | Python idiomático — FastAPI/Django, Pydantic v2, async, pytest, polars |
+
+### architecture
+| Agent | Uso |
+|---|---|
+| `system-architect` | Arquitetura, ADRs, C4, análise de trade-offs |
+
+### security
+| Agent | Uso |
+|---|---|
 | `security-specialist` | AppSec/DevSecOps — OWASP Top 10, CWE Top 25, STRIDE, release-gate |
+
+### qa
+| Agent | Uso |
+|---|---|
+| `cypress-qa-analyst` | Cypress E2E, estratégia de teste, CI integration |
+| `go-sdet-backend` | Go SDET — testes, coverage, race, fuzz |
+
+### product
+| Agent | Uso |
+|---|---|
 | `senior-product-designer` | UX strategy — discovery, IA, journey, heurísticas, a11y, design system |
 | `senior-product-owner` | User stories, OKRs, priorização de backlog |
-| `senior-react-developer` | React, hooks, state, acessibilidade, testes |
-| `system-architect` | Arquitetura, ADRs, C4, análise de trade-offs |
+
+### docs
+| Agent | Uso |
+|---|---|
 | `technical-writer` | Documentação user-facing — Diátaxis, getting-started, tutorials, how-tos, migration guides |
+
+### meta
+| Agent | Uso |
+|---|---|
+| `project-memory-keeper` | Trio `.claude/memory/{business,architecture,guidelines}.md` + READMEs + ADRs |
+
+> Para listar localmente filtrando por time: `ahc list --team=backend,data`.
 
 ## Commands disponíveis
 
@@ -383,6 +426,7 @@ Dois mecanismos rodam em CI (workflow `Test`) em todo PR e push pra `main`. Ambo
 - `description` (quando entre aspas) é JSON válido.
 - `model` em `opus|sonnet|haiku`.
 - `tier` (quando presente) em `reasoning|speed`.
+- `team` (quando presente) em `backend|frontend|data|devops|integration|architecture|security|qa|product|docs|meta`.
 - Skills: `SKILL.md` existe, frontmatter tem `name` igual à pasta, manifest tem todos os arquivos da árvore (sem orphan).
 - `manifest.updated_at` no formato `YYYY-MM-DD`.
 - `sha256` de cada item bate com o conteúdo do arquivo.
@@ -390,7 +434,7 @@ Dois mecanismos rodam em CI (workflow `Test`) em todo PR e push pra `main`. Ambo
 ```bash
 node scripts/validate-artifacts.js                  # passa com warnings, exit 0 se sem erros
 node scripts/validate-artifacts.js --quiet          # só erros
-node scripts/validate-artifacts.js --strict         # tier ausente vira erro (não warning)
+node scripts/validate-artifacts.js --strict         # tier e team ausentes viram erro (não warning)
 ```
 
 ### Testes (`node --test`)
@@ -432,8 +476,9 @@ Campos obrigatórios:
 - `model` — `opus` | `sonnet` | `haiku`
 - `color` — qualquer cor (visual)
 
-Campo recomendado (introduzido em 2026-05):
+Campos recomendados (introduzidos em 2026-05):
 - `tier` — `reasoning` | `speed`. Meta-info pra orquestração e decisão de custo. `reasoning` = decisões complexas (PO, arquitetura, segurança, design). `speed` = execução rotineira (implementação, testes, formatação, sync de docs).
+- `team` — `backend` | `frontend` | `data` | `devops` | `integration` | `architecture` | `security` | `qa` | `product` | `docs` | `meta`. Bucket primário do agent — usado pra agrupar `ahc list` e o filtro `--team`. Um agent fica em **um** time (cross-cutting será tratado via `tags` no futuro — ver ROADMAP §6.1). Em `--strict`, ausência vira erro.
 
 ### Memória do projeto
 

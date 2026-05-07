@@ -4,6 +4,7 @@ description: "Use when the user needs end-user-facing documentation: API referen
 model: sonnet
 color: blue
 tier: speed
+team: docs
 ---
 
 # Technical Writer

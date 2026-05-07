@@ -6,147 +6,165 @@
   "agents": [
     {
       "name": "aws-devops-engineer",
-      "version": "2.1.1",
+      "version": "2.1.2",
       "path": "agents/aws-devops-engineer.md",
-      "sha256": "1d668d396f7a5210cc23aa601a7a3e7d371784e1a12cf3d19b7af4d9e2cc8d52",
+      "sha256": "af1adc172a134f237755d4f8375d11b9e2f0bc3165dbab2f0b26be45517b9ea2",
       "scope": "user",
-      "description": "AWS infra, CI/CD, Terraform, EKS, observability"
+      "description": "AWS infra, CI/CD, Terraform, EKS, observability",
+      "team": "devops"
     },
     {
       "name": "cache-search-engineer",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "agents/cache-search-engineer.md",
-      "sha256": "5f63a990c1c5248a76b4f20cd53425e9e5dcc459797d6f8a158be87694217b50",
+      "sha256": "a284f533636c804702aba277178271738a2560078f2dc2f411690f7f5a0f53c9",
       "scope": "user",
-      "description": "Use when the user needs cache strategy (Redis/Memcached/ElastiCache) or search engineering (Elasticsearch/OpenSearch) decisions: cache pattern selection, invali"
+      "description": "Use when the user needs cache strategy (Redis/Memcached/ElastiCache) or search engineering (Elasticsearch/OpenSearch) decisions: cache pattern selection, invali",
+      "team": "data"
     },
     {
       "name": "cypress-qa-analyst",
-      "version": "2.1.1",
+      "version": "2.1.2",
       "path": "agents/cypress-qa-analyst.md",
-      "sha256": "7a307d3e9f9eb5f6523ad3bac3cc1c2d2d1e0bde78d5e59c95ce226ccb99fd41",
+      "sha256": "fcb5e04aade8b5a10c12ac6c584b216f2f98060083e5718370189a3a581fa011",
       "scope": "user",
-      "description": "Cypress E2E, test strategy, CI integration"
+      "description": "Cypress E2E, test strategy, CI integration",
+      "team": "qa"
     },
     {
       "name": "dotnet-backend-architect",
-      "version": "2.1.2",
+      "version": "2.1.3",
       "path": "agents/dotnet-backend-architect.md",
-      "sha256": "ade6c69d9bb1a11fc3a293e396108c7ce182cac7be69b5e8ee8aa76a7d00f9cd",
+      "sha256": "701b5c95918f1faf657946dbf5e4ce2a5a3fbeac500b3663702e031119dbfcdf",
       "scope": "user",
-      "description": ".NET / ASP.NET Core / DDD / CQRS (native, no MediatR)"
+      "description": ".NET / ASP.NET Core / DDD / CQRS (native, no MediatR)",
+      "team": "backend"
     },
     {
       "name": "go-sdet-backend",
-      "version": "2.0.1",
+      "version": "2.0.2",
       "path": "agents/go-sdet-backend.md",
-      "sha256": "ca108e7ba97127c50a58026bf2a0c7632d3c5fddb8e3712df3975159b8e0f689",
+      "sha256": "8483d00548944a7c7e5ee27f7eb71f87bd570b449c004ede00276b8d0b75dbe1",
       "scope": "user",
-      "description": "Go SDET — tests, coverage, race conditions, quality"
+      "description": "Go SDET — tests, coverage, race conditions, quality",
+      "team": "qa"
     },
     {
       "name": "go-senior-engineer",
-      "version": "2.1.1",
+      "version": "2.1.2",
       "path": "agents/go-senior-engineer.md",
-      "sha256": "7bb1a03629e42d4f5656f783c93f15ac68c040ef86016fc8bcb792a896669de0",
+      "sha256": "acd4d6429c5e5c50d4969ed4e0d5c2ad6281160fe52e881321fc58b150c0686c",
       "scope": "user",
-      "description": "Go senior — concurrency, gRPC, microservices"
+      "description": "Go senior — concurrency, gRPC, microservices",
+      "team": "backend"
     },
     {
       "name": "infra-cost-estimator",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "agents/infra-cost-estimator.md",
-      "sha256": "8c1e3cde37f49108673ee44e25a43067ad496ba20fb944acd77bd6624a3d406c",
+      "sha256": "cc5e405f5fdcf1f68d17c14e0467741e969bafbaa699344a4a2c4166279c0ffd",
       "scope": "user",
-      "description": "Use when the user needs infrastructure cost estimation, TCO modeling, scenario comparison, FinOps analysis, or cost-driven architecture review. Distinct from aw"
+      "description": "Use when the user needs infrastructure cost estimation, TCO modeling, scenario comparison, FinOps analysis, or cost-driven architecture review. Distinct from aw",
+      "team": "devops"
     },
     {
       "name": "integration-architect",
-      "version": "2.1.1",
+      "version": "2.1.2",
       "path": "agents/integration-architect.md",
-      "sha256": "617be430b49b46602e2d44bda4e0f3e298500ca6d1dfb9c18a57c94040b6f312",
+      "sha256": "84f1ff65b153f2d8819fc06add3622ee829c1872427999d0f07c98b9f734d3f0",
       "scope": "user",
-      "description": "Event-driven, SQS/SNS/Kafka, CDC, orchestration"
+      "description": "Event-driven, SQS/SNS/Kafka, CDC, orchestration",
+      "team": "integration"
     },
     {
       "name": "nodejs-backend-architect",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "agents/nodejs-backend-architect.md",
-      "sha256": "28bfc88f63545c44502846242a66be0ea9163dd92ed02bc2ce927d1ecfa965d5",
+      "sha256": "3ccce34db4e14d1a90705ff2a521d5eafb4daa8bdae5c05878fe82d503a139c2",
       "scope": "user",
-      "description": "Node.js TS-first — Fastify/Express/NestJS, Prisma/Drizzle, Zod, async, observability"
+      "description": "Node.js TS-first — Fastify/Express/NestJS, Prisma/Drizzle, Zod, async, observability",
+      "team": "backend"
     },
     {
       "name": "postgres-dba",
-      "version": "2.3.1",
+      "version": "2.3.2",
       "path": "agents/postgres-dba.md",
-      "sha256": "b2649124be170c3288cb021c3ca33369a931ba1e3dbaf838e67de593c108ad3f",
+      "sha256": "a05c583415e0a7dbdfd1dffbbc25c708b2edc26e39e27e951dcdd9ed81032f00",
       "scope": "user",
-      "description": "PostgreSQL DBA — tuning, replication, HA, troubleshooting"
+      "description": "PostgreSQL DBA — tuning, replication, HA, troubleshooting",
+      "team": "data"
     },
     {
       "name": "project-memory-keeper",
-      "version": "3.0.0",
+      "version": "3.0.1",
       "path": "agents/project-memory-keeper.md",
-      "sha256": "812a891ebd499b4bc555c5f1131c1bf2af89b4626c0f1f814c532178aa28888f",
+      "sha256": "bdc7881888100e8a1eae9cea8c828a8e85b6a00f9e149f6526b1f10a8ed847cc",
       "scope": "user",
-      "description": "Owns the .claude/memory trio (business/architecture/guidelines), READMEs, CONTEXT.md, and ADRs"
+      "description": "Owns the .claude/memory trio (business/architecture/guidelines), READMEs, CONTEXT.md, and ADRs",
+      "team": "meta"
     },
     {
       "name": "python-engineer",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "agents/python-engineer.md",
-      "sha256": "70f259fbcbcd43b55ea9b8073e850025db3d3b3c2fac0da4badf8a7f6d4bc64c",
+      "sha256": "24c13ab7650bb690e3f3c87ee22f61448731d42c0d2cd8a71e2c933d7f9029a4",
       "scope": "user",
-      "description": "Python idiomático — FastAPI/Django, Pydantic v2, async, pytest+hypothesis, polars, packaging com uv"
+      "description": "Python idiomático — FastAPI/Django, Pydantic v2, async, pytest+hypothesis, polars, packaging com uv",
+      "team": "backend"
     },
     {
       "name": "security-specialist",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "agents/security-specialist.md",
-      "sha256": "7ebc74bc3a1c5e46d09a90640dc961a254094db46a7b8afca3f759ce2f7417b2",
+      "sha256": "24cb69321256f709a313e775df12a572debd2ed1e3a60a2f401a98490fc44359",
       "scope": "user",
-      "description": "AppSec/DevSecOps — OWASP Top 10, CWE Top 25, STRIDE, secret + dep audit, release gate"
+      "description": "AppSec/DevSecOps — OWASP Top 10, CWE Top 25, STRIDE, secret + dep audit, release gate",
+      "team": "security"
     },
     {
       "name": "senior-product-designer",
-      "version": "1.0.1",
+      "version": "1.0.2",
       "path": "agents/senior-product-designer.md",
-      "sha256": "f8788e8faed7ed68ac7651914bf896cb3ef729319eccd9db6c585ed604add338",
+      "sha256": "c7bcdb0ca0e2f8a1d50183e71e9a2375c15126ad9a2d9ea3f2fe03eada265759",
       "scope": "user",
-      "description": "UX strategy & product design — discovery, IA, journey, heuristics, a11y, design system"
+      "description": "UX strategy & product design — discovery, IA, journey, heuristics, a11y, design system",
+      "team": "product"
     },
     {
       "name": "senior-product-owner",
-      "version": "2.1.1",
+      "version": "2.1.2",
       "path": "agents/senior-product-owner.md",
-      "sha256": "e87cd3ce6fcd058b558f2ef766c77e862fb358ad6ef1ea5bb5f79d4cc9b3ea0c",
+      "sha256": "fbcc802406a46e8babf8d0bc286162cd043292484012093e7877c9d237516ac6",
       "scope": "user",
-      "description": "User stories, OKRs, backlog prioritization"
+      "description": "User stories, OKRs, backlog prioritization",
+      "team": "product"
     },
     {
       "name": "senior-react-developer",
-      "version": "2.1.1",
+      "version": "2.1.2",
       "path": "agents/senior-react-developer.md",
-      "sha256": "6a4b4a036379a219fbb9cb23f50a33ee2bf04494c4f8d76bc6e030d0f7e9949f",
+      "sha256": "15fd392e4a600e96869df1572e71940b6604993261fe7f3f8c0915c04fb3fe3d",
       "scope": "user",
-      "description": "React, hooks, state, accessibility, testing"
+      "description": "React, hooks, state, accessibility, testing",
+      "team": "frontend"
     },
     {
       "name": "system-architect",
-      "version": "2.1.1",
+      "version": "2.1.2",
       "path": "agents/system-architect.md",
-      "sha256": "a74e25d07e0a4146e0da62b2efc24a36c7d72a58e74d978c305c3a542f9631f0",
+      "sha256": "205d03a599afe58ac79a84ae0df44f95a918f11eb3b05d10a1afeff91de3e3f9",
       "scope": "user",
-      "description": "Architecture, ADRs, C4, trade-off analysis"
+      "description": "Architecture, ADRs, C4, trade-off analysis",
+      "team": "architecture"
     },
     {
       "name": "technical-writer",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "agents/technical-writer.md",
-      "sha256": "98fe26a188d242fddd813f799cb25dc6f0b2e399b3e79cfd81046b4ddf118319",
+      "sha256": "ef304d900dc99ac3233fb2acf2b13a3749a3cc0732ae3e33ee1816ba832be223",
       "scope": "user",
-      "description": "Use when the user needs end-user-facing documentation: API reference polish, getting-started guides, tutorials, knowledge-base articles, README rewrites, migrat"
+      "description": "Use when the user needs end-user-facing documentation: API reference polish, getting-started guides, tutorials, knowledge-base articles, README rewrites, migrat",
+      "team": "docs"
     }
   ],
   "commands": [

@@ -4,6 +4,7 @@ description: "Use when working on .NET backend: C#, ASP.NET Core, Entity Framewo
 model: opus
 color: green
 tier: reasoning
+team: backend
 ---
 
 # .NET Backend Architect

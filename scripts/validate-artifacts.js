@@ -9,7 +9,7 @@
 // summary. Designed to run in CI and locally before commits.
 //
 // Flags:
-//   --strict    also requires `tier` field on every agent (warning becomes error)
+//   --strict    also requires `tier` and `team` fields on every agent (warnings become errors)
 //   --quiet     only print errors (no per-check tick)
 //
 // Zero deps. Run from repo root: node scripts/validate-artifacts.js
@@ -27,6 +27,20 @@ const SKILLS_DIR = path.join(REPO_ROOT, 'skills');
 const ARGS = process.argv.slice(2);
 const STRICT = ARGS.includes('--strict');
 const QUIET = ARGS.includes('--quiet');
+
+const VALID_TEAMS = [
+  'backend',
+  'frontend',
+  'data',
+  'devops',
+  'integration',
+  'architecture',
+  'security',
+  'qa',
+  'product',
+  'docs',
+  'meta',
+];
 
 const errors = [];
 const warnings = [];
@@ -154,6 +168,16 @@ for (const file of agentFiles) {
     fail(`agents/${file}`, 'tier is required in --strict mode');
   } else {
     warn(`agents/${file}`, 'tier missing — recommended (reasoning|speed)');
+  }
+
+  if (fm.team) {
+    if (!VALID_TEAMS.includes(fm.team)) {
+      fail(`agents/${file}`, `team must be one of ${VALID_TEAMS.join('|')} (got "${fm.team}")`);
+    }
+  } else if (STRICT) {
+    fail(`agents/${file}`, 'team is required in --strict mode');
+  } else {
+    warn(`agents/${file}`, `team missing — recommended (${VALID_TEAMS.join('|')})`);
   }
 
   // Cross-ref with manifest

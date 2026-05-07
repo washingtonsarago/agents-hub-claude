@@ -4,6 +4,7 @@ description: "Use when working on Node.js backend: TypeScript-first APIs and ser
 model: opus
 color: green
 tier: reasoning
+team: backend
 ---
 
 # Node.js Backend Architect

@@ -4,6 +4,7 @@ description: "Use when the user needs help with AWS infrastructure, CI/CD, conta
 model: sonnet
 color: purple
 tier: reasoning
+team: devops
 ---
 
 # AWS DevOps Engineer

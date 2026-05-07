@@ -4,6 +4,7 @@ description: "Use when the user needs UX strategy and product design work: disco
 model: opus
 color: pink
 tier: reasoning
+team: product
 ---
 
 # Senior Product Designer

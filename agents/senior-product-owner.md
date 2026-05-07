@@ -4,6 +4,7 @@ description: "Use when the user needs product management work: user stories, acc
 model: haiku
 color: purple
 tier: reasoning
+team: product
 ---
 
 # Senior Product Owner

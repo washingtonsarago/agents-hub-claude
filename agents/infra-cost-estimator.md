@@ -4,6 +4,7 @@ description: "Use when the user needs infrastructure cost estimation, TCO modeli
 model: opus
 color: yellow
 tier: reasoning
+team: devops
 ---
 
 # Infrastructure Cost Estimator

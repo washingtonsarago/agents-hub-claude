@@ -4,6 +4,7 @@ description: "Use when the user needs cache strategy (Redis/Memcached/ElastiCach
 model: opus
 color: red
 tier: reasoning
+team: data
 ---
 
 # Cache & Search Engineer

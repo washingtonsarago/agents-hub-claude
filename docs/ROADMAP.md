@@ -15,6 +15,7 @@ Documento de iniciativas futuras pro hub. Origem: discussões entre Washington (
 - `scripts/regen-manifest.js` + `scripts/validate-artifacts.js`
 - Convenções documentadas no README: idioma, frontmatter, memória trio
 - `tier:` metadata em todos os 18 agents (dívida zerada)
+- `team:` metadata em todos os 18 agents (Fase 1 do item 6 entregue) — agrupamento e filtro `--team` no `ahc list`
 - Sweep PT-BR concluído nos commands antigos (dívida zerada)
 - Diagrama de arquitetura em `docs/architecture/agents-hub-claude.png`
 - Validator: **0 errors, 0 warnings**
@@ -281,26 +282,29 @@ Reuso natural com Fase B do item 2 (autonomous agents).
 
 ## 6. Discoverability  **[backlog médio]**
 
-### 6.1 Tags / categorias no manifest
+### 6.1 Team field (Fase 1)  <!-- DONE: 2026-05-07 -->
 
-**Problema.** USAGE.md já tem 308 linhas e cresce com cada artefato. Em 6 meses será 800+. Devs não acham o agent certo pra sua tarefa.
+**Entregue.** Cada agent declara `team` na frontmatter (enum fechado de 11 buckets: `backend|frontend|data|devops|integration|architecture|security|qa|product|docs|meta`). Validator garante o enum (warning sem `--strict`, erro com `--strict`). Manifest carrega `team` por agent (propagado sem bump de versão — é metadata). `ahc list` agrupa por team e suporta `--team=<a,b,...>` pra filtrar.
 
-**Solução.** Extender frontmatter com `tags: [string]` (2-5 tags por artefato). Comandos novos:
-- `ahc list --tag backend` → filtra
+### 6.2 Tags cross-cutting (Fase 3 — pendente)
+
+**Problema.** `team` é unidimensional. Casos como `aws-devops-engineer` (infra **e** observabilidade **e** custo) ou `cache-search-engineer` (data **e** performance) merecem múltiplos eixos.
+
+**Solução.** Estender frontmatter com `tags: [string]` (2-5 tags por artefato — cross-cutting). Comandos novos:
 - `ahc search observability` → busca em tags + description
 - `ahc show go-senior-engineer --related` → sugere artefatos relacionados (overlap de tags)
 
 Manifest schema bump v1 → v2 com migration path no `ahc sync` pra versões antigas.
 
-**Esforço:** ~20h (tagging retroativo 4h + schema 3h + code 7h + tests 4h + docs 2h).
+**Esforço:** ~16h (tagging retroativo 3h + schema 3h + code 6h + tests 2h + docs 2h).
 
-### 6.2 Cross-reference automático entre agents relacionados
+### 6.3 Cross-reference automático entre agents relacionados
 
 **Problema.** Dev usa `go-senior-engineer` mas não sabe que existe `go-sdet-backend` complementar.
 
-**Solução.** Após item 6.1, gerar grafo de relacionamento (tag overlap + campo `related` opcional no frontmatter). README mostra "often used with" por agent.
+**Solução.** Após item 6.2, gerar grafo de relacionamento (tag overlap + campo `related` opcional no frontmatter). README mostra "often used with" por agent.
 
-**Esforço:** ~6h após 6.1.
+**Esforço:** ~6h após 6.2.
 
 ---
 

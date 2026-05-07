@@ -109,6 +109,39 @@ test('validator: --strict turns missing tier into an error', () => {
   } finally { rmrf(repo); }
 });
 
+test('validator: catches invalid team value', () => {
+  const repo = makeMinimalRepo();
+  try {
+    const p = path.join(repo, 'agents/test-agent.md');
+    const txt = fs.readFileSync(p, 'utf8').replace(/^team: backend$/m, 'team: notarealteam');
+    fs.writeFileSync(p, txt);
+
+    const r = runValidator(repo, ['--quiet']);
+    assert.equal(r.status, 1);
+    assert.match(r.stdout, /team must be one of/);
+  } finally { rmrf(repo); }
+});
+
+test('validator: --strict turns missing team into an error', () => {
+  const repo = makeMinimalRepo();
+  try {
+    const p = path.join(repo, 'agents/test-agent.md');
+    const txt = fs.readFileSync(p, 'utf8').replace(/^team:.*\n?/m, '');
+    fs.writeFileSync(p, txt);
+    patchManifest(repo, m => { m.agents[0].sha256 = sha256OfFile(p); });
+
+    // Without --strict: passes (warning only)
+    const r1 = runValidator(repo, ['--quiet']);
+    assert.equal(r1.status, 0,
+      `team missing should be a warning without --strict. stdout:\n${r1.stdout}\nstderr:\n${r1.stderr}`);
+
+    // With --strict: fails with team-specific error
+    const r2 = runValidator(repo, ['--quiet', '--strict']);
+    assert.equal(r2.status, 1);
+    assert.match(r2.stdout, /team is required in --strict mode/);
+  } finally { rmrf(repo); }
+});
+
 test('validator: catches sha256 drift', () => {
   const repo = makeMinimalRepo();
   try {

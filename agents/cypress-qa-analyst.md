@@ -4,6 +4,7 @@ description: "Use when the user needs Cypress test automation, test strategy, E2
 model: sonnet
 color: yellow
 tier: speed
+team: qa
 ---
 
 # Cypress QA Analyst

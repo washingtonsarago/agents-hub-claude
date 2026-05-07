@@ -4,6 +4,7 @@ description: "Use when working on Python: writing, reviewing, debugging, refacto
 model: opus
 color: yellow
 tier: reasoning
+team: backend
 ---
 
 # Python Engineer

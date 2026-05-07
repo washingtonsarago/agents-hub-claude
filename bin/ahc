@@ -274,25 +274,61 @@ async function cmdList() {
 
   console.log(`repo: ${cfg.repo}@${cfg.branch} (${cfg.channel})`);
 
+  // Optional `--team <bucket>` filter (only meaningful for agents).
+  const teamFilter = (() => {
+    const a = ARGS.find(x => x.startsWith('--team='));
+    if (a) return a.slice('--team='.length).split(',').map(s => s.trim()).filter(Boolean);
+    const i = ARGS.indexOf('--team');
+    if (i !== -1 && ARGS[i + 1]) return ARGS[i + 1].split(',').map(s => s.trim()).filter(Boolean);
+    return null;
+  })();
+
+  function renderRow(name, local, remote, pin) {
+    let status = '  ';
+    if (!local && remote) status = '++';
+    else if (local && remote && local.sha256 !== remote.sha256) status = '↑↑';
+    else if (local && !remote) status = '--';
+    const v = local ? local.version : '-';
+    const r = remote ? remote.version : '-';
+    const pinTag = pin ? ` [pin:${pin}]` : '';
+    return `${status} ${name.padEnd(30)} local:${v.padEnd(8)} remote:${r}${pinTag}`;
+  }
+
   for (const cat of CATEGORIES) {
     const remoteItems = manifest ? (manifest[cat.manifestKey] || []) : [];
     const localItems = lock[cat.key] || {};
     const names = new Set([...Object.keys(localItems), ...remoteItems.map(i => i.name)]);
     if (names.size === 0) continue;
 
+    // Group agents by team. Other categories print flat (no team concept yet).
+    if (cat.key === 'agents') {
+      const buckets = new Map(); // team -> [name]
+      for (const name of [...names].sort()) {
+        const remote = remoteItems.find(i => i.name === name);
+        const team = (remote && remote.team) || '(no-team)';
+        if (teamFilter && !teamFilter.includes(team)) continue;
+        if (!buckets.has(team)) buckets.set(team, []);
+        buckets.get(team).push(name);
+      }
+      const total = [...buckets.values()].reduce((n, arr) => n + arr.length, 0);
+      console.log(`\nAGENTS (${total}${teamFilter ? `, filtered by team=${teamFilter.join(',')}` : ''})`);
+      for (const team of [...buckets.keys()].sort()) {
+        const list = buckets.get(team);
+        console.log(`\n  ${team} (${list.length})`);
+        for (const name of list) {
+          const local = localItems[name];
+          const remote = remoteItems.find(i => i.name === name);
+          console.log(`  ${renderRow(name, local, remote, lock.pins[name])}`);
+        }
+      }
+      continue;
+    }
+
     console.log(`\n${cat.key.toUpperCase()}`);
     for (const name of [...names].sort()) {
       const local = localItems[name];
       const remote = remoteItems.find(i => i.name === name);
-      const pin = lock.pins[name];
-      let status = '  ';
-      if (!local && remote) status = '++';
-      else if (local && remote && local.sha256 !== remote.sha256) status = '↑↑';
-      else if (local && !remote) status = '--';
-      const v = local ? local.version : '-';
-      const r = remote ? remote.version : '-';
-      const pinTag = pin ? ` [pin:${pin}]` : '';
-      console.log(`${status} ${name.padEnd(30)} local:${v.padEnd(8)} remote:${r}${pinTag}`);
+      console.log(renderRow(name, local, remote, lock.pins[name]));
     }
   }
 
@@ -362,7 +398,7 @@ function help() {
 
 commands:
   sync [--quiet] [--timeout=N] [--force]   fetch manifest and update agents + commands
-  list                                     show local vs remote state (by category)
+  list [--team=<a,b,...>]                  show local vs remote state; agents grouped by team
   pin <name>@<version>                     pin an item version (agent or command)
   unpin <name>                             remove pin
   config [key=value]                       show or set config (repo, branch, channel)
