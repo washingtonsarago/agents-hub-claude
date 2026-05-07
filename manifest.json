@@ -1,7 +1,7 @@
 {
   "version": 1,
   "channel": "stable",
-  "updated_at": "2026-05-05",
+  "updated_at": "2026-05-07",
   "repo": "EMS-NCTECH/agents-hub-claude",
   "agents": [
     {
@@ -123,6 +123,14 @@
       "sha256": "a74e25d07e0a4146e0da62b2efc24a36c7d72a58e74d978c305c3a542f9631f0",
       "scope": "user",
       "description": "Architecture, ADRs, C4, trade-off analysis"
+    },
+    {
+      "name": "technical-writer",
+      "version": "1.0.0",
+      "path": "agents/technical-writer.md",
+      "sha256": "98fe26a188d242fddd813f799cb25dc6f0b2e399b3e79cfd81046b4ddf118319",
+      "scope": "user",
+      "description": "Use when the user needs end-user-facing documentation: API reference polish, getting-started guides, tutorials, knowledge-base articles, README rewrites, migrat"
     }
   ],
   "commands": [
