@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ahc — agents-hub-claude CLI
-// Zero-dep Node. Commands: sync | list | pin | unpin | config
+// Zero-dep Node. Commands: sync | list | pin | unpin | config | doctor
 
 const fs = require('fs');
 const path = require('path');
@@ -382,6 +382,145 @@ function cmdUnpin() {
   console.log(`[unpinned] ${name}`);
 }
 
+// `ahc doctor` — diagnostic checks. Each check pushes one of:
+//   { kind: 'ok'|'warn'|'fail', label, detail?, hint? }
+// Exit code: 1 if any 'fail', 0 otherwise (warns are non-fatal).
+async function cmdDoctor() {
+  const checks = [];
+  const pass = (label, detail) => checks.push({ kind: 'ok', label, detail });
+  const warn = (label, detail, hint) => checks.push({ kind: 'warn', label, detail, hint });
+  const fail = (label, detail, hint) => checks.push({ kind: 'fail', label, detail, hint });
+
+  // 1. ahc binary in PATH
+  const ahcBin = process.argv[1] || '(unknown)';
+  if (fs.existsSync(ahcBin)) pass('ahc binary in PATH', ahcBin);
+  else fail('ahc binary location', `not found at ${ahcBin}`, 'Re-run install.sh');
+
+  // 2. SessionStart hook in settings.json
+  const settingsPath = path.join(CLAUDE_DIR, 'settings.json');
+  if (!fs.existsSync(settingsPath)) {
+    warn('SessionStart hook', 'settings.json missing', 'Re-run install.sh to configure auto-sync');
+  } else {
+    const settings = readJSON(settingsPath, null);
+    if (!settings) fail('SessionStart hook', 'settings.json is not valid JSON', `Inspect ${settingsPath}`);
+    else {
+      const hooks = (settings.hooks && settings.hooks.SessionStart) || [];
+      const hasAhc = hooks.some(h => (h.hooks || []).some(c => typeof c.command === 'string' && c.command.includes('ahc sync')));
+      if (hasAhc) pass('SessionStart hook configured', settingsPath);
+      else fail('SessionStart hook', 'no `ahc sync` hook found in settings.json', 'Re-run install.sh — it merges the hook safely');
+    }
+  }
+
+  // 3. Lock file
+  const lockExists = fs.existsSync(LOCK_FILE);
+  if (!lockExists) {
+    warn('lock file', 'not present yet', 'Run `ahc sync` once to create it');
+  } else {
+    const lock = readJSON(LOCK_FILE, null);
+    if (!lock) fail('lock file', '.ahc-lock.json is not valid JSON', `Inspect ${LOCK_FILE} or delete and re-run \`ahc sync\``);
+    else {
+      const a = Object.keys(lock.agents || {}).length;
+      const c = Object.keys(lock.commands || {}).length;
+      const s = Object.keys(lock.skills || {}).length;
+      const total = a + c + s;
+      if (total === 0) warn('lock file', 'empty (no items installed)', 'Run `ahc sync`');
+      else {
+        const mtime = fs.statSync(LOCK_FILE).mtimeMs;
+        const age = humanAge(Date.now() - mtime);
+        pass('lock file valid', `${a} agents · ${c} commands · ${s} skills · last sync ${age} ago`);
+      }
+    }
+  }
+
+  // 4. Config file permission (only matters on Unix; fail-closed if mode has world bits AND token field is set)
+  if (fs.existsSync(CONFIG_FILE)) {
+    const cfg = readJSON(CONFIG_FILE, {});
+    const mode = fs.statSync(CONFIG_FILE).mode & 0o777;
+    const worldOrGroup = (mode & 0o077) !== 0;
+    const hasToken = typeof cfg.token === 'string' && cfg.token.length > 0;
+    if (process.platform !== 'win32' && worldOrGroup && hasToken) {
+      fail('config file permission', `mode ${mode.toString(8).padStart(3, '0')} on ${CONFIG_FILE} (token present)`, `Run \`chmod 600 ${CONFIG_FILE}\``);
+    } else if (process.platform !== 'win32' && worldOrGroup) {
+      warn('config file permission', `mode ${mode.toString(8).padStart(3, '0')} on ${CONFIG_FILE}`, `Run \`chmod 600 ${CONFIG_FILE}\` (preventive, no token currently)`);
+    } else {
+      pass('config file permission', `${process.platform === 'win32' ? 'win32 (skipped)' : `mode ${mode.toString(8).padStart(3, '0')}`}`);
+    }
+  } else {
+    pass('config file permission', '.ahc-config.json not present (defaults in use)');
+  }
+
+  // 5. Git auth / remote reachability (skip for file:// fixtures)
+  const cfg = loadConfig();
+  if (isGitRepo(cfg)) {
+    const url = `https://github.com/${cfg.repo}.git`;
+    try {
+      execSync(`git ls-remote --exit-code "${url}" "${cfg.branch}"`, {
+        stdio: 'pipe',
+        timeout: 8000,
+      });
+      pass('git auth', `${cfg.repo}@${cfg.branch} reachable`);
+    } catch (e) {
+      const stderr = (e.stderr && e.stderr.toString()) || e.message || '';
+      const reason = /Authentication|403|denied/i.test(stderr) ? 'auth denied (token/credentials)'
+        : /not found|404/i.test(stderr) ? 'repo not found (typo or no access)'
+        : /timeout|timed out/i.test(stderr) ? 'timeout (network or remote down)'
+        : 'connection error';
+      fail('git auth', `${cfg.repo}@${cfg.branch}: ${reason}`, 'Run `gh auth login` (or `gh auth setup-git`); for headless setups set AHC_GITHUB_TOKEN');
+    }
+  } else {
+    pass('git auth', `local fixture (${cfg.repo}) — skipped`);
+  }
+
+  // 6. CLI up to date — compare local bin/ahc sha to the version in the cache.
+  // Prefer the git cache (auth via git credentials, works for INTERNAL repos);
+  // fall back to raw URL for file://-style fixtures.
+  if (fs.existsSync(ahcBin)) {
+    try {
+      let remoteBin;
+      if (isGitRepo(cfg)) {
+        const cachePath = gitRefresh({ ...cfg }); // FLAGS.quiet stays whatever it is
+        const remoteBinPath = path.join(cachePath, 'bin', 'ahc');
+        if (!fs.existsSync(remoteBinPath)) throw new Error('bin/ahc not in cache');
+        remoteBin = fs.readFileSync(remoteBinPath, 'utf8');
+      } else {
+        remoteBin = await fetchURL(rawURL(cfg, 'bin/ahc'));
+      }
+      const localSha = sha256(fs.readFileSync(ahcBin, 'utf8'));
+      const remoteSha = sha256(remoteBin);
+      if (localSha === remoteSha) pass('ahc CLI up to date', `sha ${localSha.slice(0, 12)}…`);
+      else warn('ahc CLI out of date', `local ${localSha.slice(0, 12)}… ≠ remote ${remoteSha.slice(0, 12)}…`, 'Re-run install.sh to upgrade the CLI binary');
+    } catch (e) {
+      warn('ahc CLI version check', `could not compare with remote: ${e.message}`, 'Re-check git auth (above) or run `ahc sync` once to populate the cache');
+    }
+  } else {
+    warn('ahc CLI version check', 'binary path missing (skipping comparison)');
+  }
+
+  // Render
+  const SYM = { ok: '✓', warn: '⚠', fail: '✗' };
+  console.log('ahc doctor — system health check\n');
+  for (const c of checks) {
+    const detail = c.detail ? ` ${c.kind === 'ok' ? '(' + c.detail + ')' : '— ' + c.detail}` : '';
+    console.log(`${SYM[c.kind]} ${c.label}${detail}`);
+    if (c.hint && c.kind !== 'ok') console.log(`  → ${c.hint}`);
+  }
+  const counts = { ok: 0, warn: 0, fail: 0 };
+  for (const c of checks) counts[c.kind]++;
+  console.log(`\nSummary: ${counts.ok} ${SYM.ok} · ${counts.warn} ${SYM.warn} · ${counts.fail} ${SYM.fail}`);
+  process.exit(counts.fail > 0 ? 1 : 0);
+}
+
+function humanAge(ms) {
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.round(h / 24);
+  return `${d}d`;
+}
+
 function cmdConfig() {
   const kv = ARGS[1];
   if (!kv) { console.log(JSON.stringify(loadConfig(), null, 2)); return; }
@@ -402,6 +541,7 @@ commands:
   pin <name>@<version>                     pin an item version (agent or command)
   unpin <name>                             remove pin
   config [key=value]                       show or set config (repo, branch, channel)
+  doctor                                   diagnose PATH, hook, auth, lock, perms, CLI freshness
   help                                     this message
 
 files:
@@ -421,6 +561,7 @@ files:
     else if (cmd === 'pin') cmdPin();
     else if (cmd === 'unpin') cmdUnpin();
     else if (cmd === 'config') cmdConfig();
+    else if (cmd === 'doctor') await cmdDoctor();
     else help();
   } catch (e) {
     err(`[ahc] ${e.message}`);

@@ -26,7 +26,7 @@ Em resumo: **menos tempo configurando Claude Code, mais tempo entregando softwar
 **Fluxo, da esquerda pra direita:**
 
 1. **Contributor** edita `agents/`, `commands/` ou `skills/` no repo do hub.
-2. Push pra um PR → **CI Actions** roda dois gates: `regen-manifest --check` (falha se manifest está desatualizado) + `test.yml` (validator + 33 testes de integração `node:test`).
+2. Push pra um PR → **CI Actions** roda dois gates: `regen-manifest --check` (falha se manifest está desatualizado) + `test.yml` (validator + 43 testes de integração `node:test`).
 3. Merge no `main` → workflow `regen-manifest` faz auto-commit do manifest se houver drift residual.
 4. Em cada `SessionStart` do Claude Code de cada dev, o hook dispara `ahc sync --quiet --timeout=5`.
 5. `ahc` faz `git clone --depth=1` do repo, lê `manifest.json`, compara com `~/.claude/.ahc-lock.json`, baixa só o que mudou, **verifica sha256 por arquivo** (incluindo cada arquivo dentro de uma skill), grava em `~/.claude/{agents,commands,skills}/`.
@@ -40,7 +40,7 @@ Registry centralizado de **agents, commands e skills do Claude Code** da EMS-NCT
 - **CLI:** `ahc` — Node zero-deps, distribuída via `install.sh`
 - **Auto-update:** hook `SessionStart` do Claude Code roda `ahc sync` a cada sessão
 - **Destino dos arquivos:** `~/.claude/agents/` (agents), `~/.claude/commands/` (slash commands), `~/.claude/skills/<nome>/` (skills multi-arquivo)
-- **Quality gates:** GitHub Actions `regen-manifest` (PR + push) e `test.yml` (validator + 33 testes)
+- **Quality gates:** GitHub Actions `regen-manifest` (PR + push) e `test.yml` (validator + 43 testes)
 
 > **Como usar cada agent/command?** Veja o **[Guia de uso com exemplos →](docs/USAGE.md)** — o que cada um faz, quando acionar, prompts prontos e fluxos combinados.
 
@@ -265,6 +265,42 @@ ahc config channel=beta                           # label do canal
 
 Config fica em `~/.claude/.ahc-config.json`.
 
+### Diagnóstico (`ahc doctor`)
+
+Quando o auto-update parar de funcionar ou você quiser confirmar que está tudo configurado, rode:
+
+```bash
+ahc doctor
+```
+
+Saída exemplo:
+
+```
+ahc doctor — system health check
+
+✓ ahc binary in PATH (/Users/you/.local/bin/ahc)
+✓ SessionStart hook configured (/Users/you/.claude/settings.json)
+✓ lock file valid (18 agents · 14 commands · 4 skills · last sync 2h ago)
+✓ config file permission (mode 600)
+✓ git auth (EMS-NCTECH/agents-hub-claude@main reachable)
+✓ ahc CLI up to date (sha 172722dc170f…)
+
+Summary: 6 ✓ · 0 ⚠ · 0 ✗
+```
+
+O que cada check valida:
+
+- **`ahc binary in PATH`** — o binário invocado é encontrado no filesystem.
+- **`SessionStart hook`** — `~/.claude/settings.json` tem hook `SessionStart` rodando `ahc sync`.
+- **`lock file`** — `~/.claude/.ahc-lock.json` parseável, não vazio, e mostra última sync.
+- **`config file permission`** — `~/.claude/.ahc-config.json` está em `0600` (crítico se houver token; preventivo caso contrário). No Windows, é skipped.
+- **`git auth`** — `git ls-remote` no repo configurado responde em até 8s (auth + reachability).
+- **`ahc CLI up to date`** — sha do binário local bate com o `bin/ahc` da branch configurada (avisa se você tem CLI antigo após release).
+
+**Exit codes:**
+- `0` — tudo verde ou só ⚠ (warnings não bloqueiam).
+- `1` — pelo menos um ✗ (item bloqueante; siga a hint logo abaixo do check).
+
 ---
 
 ## Auto-update via SessionStart
@@ -442,10 +478,11 @@ node scripts/validate-artifacts.js --strict         # tier e team ausentes viram
 Suite de integração cobrindo o CLI (`bin/ahc`), o regen (`scripts/regen-manifest.js`) e o validator. Spawna o CLI real contra fixtures `file://` num `HOME` temporário — testa exatamente o que o dev experimenta.
 
 ```bash
-node --test test/*.test.js                          # roda tudo (~1.5s)
+node --test test/*.test.js                          # roda tudo (~2s)
 node --test test/sync.test.js                       # só os de sync
 node --test test/regen.test.js                      # só regen
 node --test test/validator.test.js                  # só validator
+node --test test/doctor.test.js                     # só doctor
 ```
 
 Cobertura atual:
@@ -453,6 +490,7 @@ Cobertura atual:
 - `sync.test.js` — install fresco, idempotência, hash mismatch em skill, pin/unpin, lock back-compat (sem `skills` field), `list` com 3 categorias, `config` get/set.
 - `regen.test.js` — clean repo, edição com bump patch, `--check` falhando em drift, `--dry-run`, novo agent, remoção de orphan, skill multi-arquivo, `.DS_Store` ignorado, `--bump=minor`, `--bump` inválido.
 - `validator.test.js` — fixture clean passa, frontmatter ausente, name/filename mismatch, JSON quebrado, model/tier/team inválidos, `--strict` (tier e team), sha drift, file ausente, orphan, aux file fora do manifest, manifest JSON inválido, `updated_at` formato errado.
+- `doctor.test.js` — clean env exit 0, missing/malformed `settings.json`, hook sem `ahc sync`, missing/malformed/empty lock, config world-readable com e sem token, mode 600.
 
 ---
 
@@ -501,12 +539,13 @@ Agents que precisam de contexto persistente do projeto **leem e escrevem em `.cl
 ├── scripts/
 │   ├── regen-manifest.js     # regenera manifest.json a partir de agents/ + commands/ + skills/
 │   └── validate-artifacts.js # CI gate: frontmatter + sha + orphan + nomes
-├── test/                     # node:test integration tests (sync, regen, validator)
+├── test/                     # node:test integration tests (sync, regen, validator, doctor)
 │   ├── helpers.js
 │   ├── fixtures/remote/      # mini repo de fixtures (1 agent, 1 command, 1 skill)
 │   ├── sync.test.js
 │   ├── regen.test.js
-│   └── validator.test.js
+│   ├── validator.test.js
+│   └── doctor.test.js
 ├── .github/workflows/
 │   ├── regen-manifest.yml    # CI: --check em PR, auto-commit no push pra main
 │   └── test.yml              # CI: validator + node --test em PR e push
