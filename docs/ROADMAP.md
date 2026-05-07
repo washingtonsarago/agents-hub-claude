@@ -7,15 +7,17 @@ Documento de iniciativas futuras pro hub. Origem: discussões entre Washington (
 
 ---
 
-## Estado atual (snapshot de 2026-05-02)
+## Estado atual (snapshot de 2026-05-07)
 
 - **18 agents + 14 commands + 4 skills**, distribuídos via `ahc sync` no `SessionStart` hook do Claude Code
 - CLI `ahc` zero-deps + manifest com sha256 por arquivo
-- 2 GitHub Actions: `regen-manifest` (CI gate) e `test.yml` (validator + 33 testes)
+- 2 GitHub Actions: `regen-manifest` (CI gate) e `test.yml` (validator + 43 testes)
 - `scripts/regen-manifest.js` + `scripts/validate-artifacts.js`
+- `ahc doctor` para diagnóstico (PATH, hook, auth, lock, perms, CLI freshness)
 - Convenções documentadas no README: idioma, frontmatter, memória trio
 - `tier:` metadata em todos os 18 agents (dívida zerada)
 - `team:` metadata em todos os 18 agents (Fase 1 do item 6 entregue) — agrupamento e filtro `--team` no `ahc list`
+- `/code-review` paralelo multi-reviewer (orquestrador dispara até 6 specialists em paralelo, deduplica e consolida)
 - Sweep PT-BR concluído nos commands antigos (dívida zerada)
 - Diagrama de arquitetura em `docs/architecture/agents-hub-claude.png`
 - Validator: **0 errors, 0 warnings**
@@ -154,33 +156,20 @@ Bons agents autônomos são os que **falham silenciosamente sem prejuízo** (com
 
 ## 3. CLI quality-of-life
 
-### 3.1 `ahc doctor`  **[próximo]**
+### 3.1 `ahc doctor`  <!-- DONE: 2026-05-07 -->
 
-**Problema.** Devs com hook desatualizado / PATH errado / lock corrompido / token expirado ficam sem feedback. Suporte vira pingue-pongue de WhatsApp.
+**Entregue.** Comando de diagnóstico com 6 checks e exit codes semânticos (`0` = só ✓ ou ⚠; `1` = ao menos um ✗):
 
-**Solução.** Comando de diagnóstico com exit codes semânticos:
-```bash
-ahc doctor
-✓ ahc in PATH: ~/.local/bin/ahc
-✓ SessionStart hook configured
-✗ git auth: permission denied
-  → Run `gh auth login` or set AHC_GITHUB_TOKEN
-✓ lock file valid (last sync: 2 hours ago)
-⚠ ahc v1.2.0 → v2.0.0 available
-  → Run bash <(curl ...) install.sh
-```
+- ahc binary in PATH
+- SessionStart hook configurado em `~/.claude/settings.json`
+- Lock file parseável, não vazio, mostra última sync
+- Config file `0600` (crítico se houver token; preventivo caso contrário)
+- Git auth (`git ls-remote` com timeout 8s)
+- ahc CLI up to date (sha do binário local vs `bin/ahc` na branch configurada — fetch via cache git pra suportar repo INTERNAL)
 
-**Checks:**
-- `~/.local/bin/ahc` no PATH
-- `~/.claude/settings.json` tem hook `SessionStart` válido
-- `git ls-remote` (ou call à raw API se token configurado) com timeout
-- `~/.claude/.ahc-lock.json` parseável + não vazio
-- Versão local do `ahc` vs versão remota (sugere self-update)
-- Permissão de `~/.claude/.ahc-config.json` é `0600` (alerta se token está em arquivo world-readable)
+Cada check falho exibe hint acionável logo abaixo. Cobertura: `test/doctor.test.js` com **10 testes** (cenários: clean env, missing/malformed settings, no `ahc sync` hook, missing/malformed/empty lock, world-readable config com e sem token, mode 600).
 
-**Esforço:** ~12h (8h código + 4h teste). Test em `test/doctor.test.js` cobrindo cada check com mocks.
-
-**Dependências:** nenhuma.
+Doc do uso em README → "Como usar → Diagnóstico (`ahc doctor`)".
 
 ### 3.2 `ahc remove <nome>`
 
