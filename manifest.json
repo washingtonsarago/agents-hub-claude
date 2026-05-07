@@ -1,7 +1,7 @@
 {
   "version": 1,
   "channel": "stable",
-  "updated_at": "2026-05-05",
+  "updated_at": "2026-05-07",
   "repo": "EMS-NCTECH/agents-hub-claude",
   "agents": [
     {
@@ -11,6 +11,14 @@
       "sha256": "1d668d396f7a5210cc23aa601a7a3e7d371784e1a12cf3d19b7af4d9e2cc8d52",
       "scope": "user",
       "description": "AWS infra, CI/CD, Terraform, EKS, observability"
+    },
+    {
+      "name": "cache-search-engineer",
+      "version": "1.0.0",
+      "path": "agents/cache-search-engineer.md",
+      "sha256": "5f63a990c1c5248a76b4f20cd53425e9e5dcc459797d6f8a158be87694217b50",
+      "scope": "user",
+      "description": "Use when the user needs cache strategy (Redis/Memcached/ElastiCache) or search engineering (Elasticsearch/OpenSearch) decisions: cache pattern selection, invali"
     },
     {
       "name": "cypress-qa-analyst",
