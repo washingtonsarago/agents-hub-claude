@@ -12,9 +12,69 @@ Este guia mostra **o que cada agent/command faz**, **quando acionar**, e **exemp
 - **Commands** são slash commands. Digite `/<nome>` no prompt (ex.: `/code-review`, `/smart-commit`).
 - Você pode **combinar**: abrir uma discovery com `/discovery`, gerar stories com `senior-product-owner`, implementar com `go-senior-engineer`, testar com `go-sdet-backend` e commitar com `/smart-commit`.
 
+### Descobrindo agents por time
+
+Cada agent declara seu **time primário** (`team` na frontmatter). Use no terminal:
+
+```bash
+ahc list                              # mostra todos os agents agrupados por time
+ahc list --team=backend               # filtra um time
+ahc list --team=backend,data,devops   # filtra múltiplos times
+```
+
+Times disponíveis: `backend`, `frontend`, `data`, `devops`, `integration`, `architecture`, `security`, `qa`, `product`, `docs`, `meta`.
+
+> **Quando usar dentro do Claude Code:** se você sabe que precisa de "alguém de data", peça *"use um agent do time `data`"* — o Claude resolve entre `postgres-dba` e `cache-search-engineer` pela natureza do problema (relacional vs cache/search).
+
 ---
 
 ## Agents
+
+> Lista agrupada por **time** (mesma ordem do `ahc list`). Para o detalhe de cada um, role pra baixo.
+
+### backend
+| Agent | Foco |
+|---|---|
+| [`dotnet-backend-architect`](#dotnet-backend-architect) | C#/ASP.NET Core, DDD, CQRS |
+| [`go-senior-engineer`](#go-senior-engineer) | Go, concorrência, gRPC |
+| [`nodejs-backend-architect`](#nodejs-backend-architect) | Node.js TS-first |
+| [`python-engineer`](#python-engineer) | Python idiomático e tipado |
+
+### frontend
+| Agent | Foco |
+|---|---|
+| [`senior-react-developer`](#senior-react-developer) | React, hooks, a11y |
+
+### data
+| Agent | Foco |
+|---|---|
+| [`cache-search-engineer`](#cache-search-engineer) | Redis/ElastiCache + Elasticsearch/OpenSearch |
+| [`postgres-dba`](#postgres-dba) | PostgreSQL DBA |
+
+### devops
+| Agent | Foco |
+|---|---|
+| [`aws-devops-engineer`](#aws-devops-engineer) | AWS, CI/CD, Terraform, EKS |
+| [`infra-cost-estimator`](#infra-cost-estimator) | TCO, FinOps, build-vs-buy |
+
+### integration · architecture · security
+| Agent | Foco |
+|---|---|
+| [`integration-architect`](#integration-architect) | Event-driven, CDC, orchestration |
+| [`system-architect`](#system-architect) | ADRs, C4, trade-offs |
+| [`security-specialist`](#security-specialist) | OWASP, STRIDE, release-gate |
+
+### qa · product · docs · meta
+| Agent | Foco |
+|---|---|
+| [`cypress-qa-analyst`](#cypress-qa-analyst) | Cypress E2E |
+| [`go-sdet-backend`](#go-sdet-backend) | Go SDET |
+| [`senior-product-owner`](#senior-product-owner) | User stories, OKRs |
+| [`senior-product-designer`](#senior-product-designer) | UX strategy, IA, a11y |
+| [`technical-writer`](#technical-writer) | Docs end-user (Diátaxis) |
+| [`project-memory-keeper`](#project-memory-keeper) | Trio de memória + ADRs |
+
+---
 
 ### aws-devops-engineer
 **O que faz:** IaC (Terraform/CloudFormation), CI/CD, EKS/ECS, observabilidade, hardening, FinOps na AWS.
@@ -24,6 +84,16 @@ Este guia mostra **o que cada agent/command faz**, **quando acionar**, e **exemp
 - "Nossa conta pulou de US$ 4k → US$ 6k/mês. Use o `aws-devops-engineer` para apontar os top 5 ofensores e sugerir ações reversíveis."
 - "Pods do serviço `orders-api` no EKS estão sendo OOMKilled 3x/dia. Limits em 512Mi. Diagnostique e proponha fix."
 - "Projete DR cross-region (us-east-1 → us-west-2) para RDS Postgres com RPO ≤ 5 min e RTO ≤ 30 min."
+
+### cache-search-engineer
+**O que faz:** estratégia de cache (Redis/Memcached/ElastiCache) e search (Elasticsearch/OpenSearch) — patterns de cache, invalidação, stampede protection, hot-key, mapping/analyzer, relevance tuning, sharding/replicas, latência de query.
+**Quando usar:** hit-ratio degradado, decisão de invalidação, stampede pós-Black-Friday, design de busca com sinônimos/relevância, mapping explosion.
+**Exemplos:**
+- "Nosso Redis está com hit-ratio em 60% e p99 do app degradou. Diagnostique key design, TTLs, eviction policy e proponha fixes."
+- "Implementar busca de produtos com sinônimos e relevância tunada — desenhe mapping Elasticsearch, analyzers, query DSL e como medir relevance."
+- "Cache stampede derrubou o serviço de listagem na Black Friday. Proponha mitigações (request coalescing, probabilistic early expiration, lock)."
+- "Estratégia de invalidação para o catálogo: TTL, event-based ou versioning? Faça trade-off consistência × complexidade."
+- "Nosso índice Elasticsearch tem 2k campos e queries lentas. Diagnostique mapping explosion + ILM + sharding."
 
 ### cypress-qa-analyst
 **O que faz:** estratégia de testes E2E, specs Cypress estáveis, integração CI, acessibilidade (axe).
@@ -55,6 +125,16 @@ Este guia mostra **o que cada agent/command faz**, **quando acionar**, e **exemp
 **Exemplos:**
 - "Acabei de escrever `ParallelOrchestrate` em `internal/gateway/service/orchestrator.go`. Revise e escreva testes (unit + race + fuzz onde fizer sentido)."
 - "Nosso coverage em `internal/transform/` está em 62%. Liste os gaps críticos e escreva os testes faltantes."
+
+### infra-cost-estimator
+**O que faz:** modela **antes** de provisionar — TCO em 3 anos, comparação de cenários (low/expected/peak), sensitivity analysis, unit economics, build-vs-buy. Cita fonte e snapshot date de cada preço.
+**Quando usar:** decisão de stack/serviço com impacto em conta cloud, dimensionamento pra carga prevista, atribuição de gasto que estourou, migração on-prem → cloud, justificativa de Reserved/Savings Plans.
+**Exemplos:**
+- "Quanto custaria rodar nosso microsserviço de pedidos em ECS Fargate vs EKS vs Lambda? 200 req/s sustained, picos 1k req/s 2x/dia, payload 4KB."
+- "Estimativa mensal pra suportar 50k MAU com pico de 2k req/s — sizing de compute, storage, egress, e budget low/expected/peak."
+- "Conta AWS subiu 40%. Atribua o gasto, proponha 3 ações pra cortar 20% e quantifique risco de cada uma vs SLO atual."
+- "Build vs buy: Postgres self-hosted no EKS ou RDS Aurora? TCO 3 anos incluindo ops effort e downtime cost."
+- "Migrar nosso ETL on-prem pra cloud (mensal: 8TB processados). Modelo TCO 3 anos com break-even + cenários conservador/realista/agressivo."
 
 ### nodejs-backend-architect
 **O que faz:** Node.js TS-first — Fastify/Express/NestJS, Prisma/Drizzle, Zod, async patterns, observabilidade, testes.
@@ -107,6 +187,15 @@ Este guia mostra **o que cada agent/command faz**, **quando acionar**, e **exemp
 - "Posso liberar o release? Já passou code-review e QA."
 - "Escaneia secrets no repo todo + CVEs nas deps de produção do serviço orders."
 
+### senior-product-designer
+**O que faz:** UX strategy — discovery, IA, journey, heurísticas, a11y (WCAG 2.1 AA), design system, mensuração com HEART. Aplica Diátaxis ao próprio output: separa research / IA / interaction / visual.
+**Quando usar:** vague request de "redesenha o dashboard", drop forte num passo de funil, heurística antes de implementar, journey map de onboarding, decisão modal vs panel vs página.
+**Exemplos:**
+- "Temos um pedido vago de 'novo dashboard de operações'. Faça discovery: quem é o usuário, qual job, qual métrica de sucesso, e proponha 2 direções com trade-offs."
+- "Checkout drop 40% no passo 3 (revisão do pedido). Diagnostique com heurísticas + análise de fluxo e proponha alternativas."
+- "Auditoria heurística (Nielsen 10) + WCAG 2.1 AA da tela `/orders/new`."
+- "Journey map do onboarding com fases, emoções, dores, oportunidades."
+
 ### senior-product-owner
 **O que faz:** user stories INVEST, critérios de aceite (Gherkin), RICE/MoSCoW, OKRs, métricas.
 **Quando usar:** traduzir requisito ambíguo em backlog acionável, priorizar, definir sucesso.
@@ -130,6 +219,16 @@ Este guia mostra **o que cada agent/command faz**, **quando acionar**, e **exemp
 - "Desenhe um sistema de pagamentos para 10k tps com idempotência forte e reconciliação diária. Proponha 2 opções e compare."
 - "Escreva um ADR para nossa decisão de adotar event-driven entre `orders` e `billing` usando EventBridge."
 - "Review do desenho anexo (C4 Container) — aponte riscos de escalabilidade e pontos únicos de falha."
+
+### technical-writer
+**O que faz:** documentação user-facing seguindo **Diátaxis** (tutorial / how-to / reference / explanation, nunca misturados). Polish de API reference, getting-started, migration guides, knowledge-base, README.
+**Quando usar:** após API estabilizada (referência precisa ser humanizada), antes de release com breaking change (migration guide), onboarding externo (getting-started), README confuso pra dev de fora.
+**Exemplos:**
+- "Escreva o getting-started do nosso SDK público em Node.js — assume 0 contexto, exemplo copia-cola que roda em 5 min."
+- "Reescreva nosso README — está confuso pra dev externo. Aplique Diátaxis."
+- "Polir a referência da API `/orders` gerada pelo OpenAPI. Humanize descrições, adicione exemplos `curl` reais e error handling."
+- "Migration guide da v1 → v2 do nosso client TS — mapa de breaking changes pra steps acionáveis."
+- "Tutorial: integrar nosso webhook em 10 minutos."
 
 ---
 
@@ -285,6 +384,21 @@ A partir do `project-memory-keeper@3.0.0`, todo agent espera encontrar três arq
 1. `postgres-dba` → diagnóstico com EXPLAIN ANALYZE
 2. `/db-audit` → auditoria completa do schema afetado
 3. `aws-devops-engineer` → ajuste de instância/parâmetros se necessário
+
+**Incidente de performance em cache/search (Redis ou Elasticsearch):**
+1. `cache-search-engineer` → diagnóstico (hit-ratio, eviction, stampede, mapping, sharding)
+2. `aws-devops-engineer` → tuning de instância/cluster (ElastiCache/OpenSearch managed) se necessário
+3. `system-architect` → decisão estrutural se cache/search vira gargalo arquitetural
+
+**Decisão build-vs-buy ou novo serviço cloud:**
+1. `system-architect` → opções arquiteturais com trade-offs
+2. `infra-cost-estimator` → TCO 3 anos por opção, sensitivity analysis, unit economics
+3. `aws-devops-engineer` → uma vez decidido, IaC + observability + autoscaling
+
+**Documentação user-facing pra release público:**
+1. `technical-writer` → getting-started + reference + migration guide (Diátaxis)
+2. `release-notes` (skill) → release notes estruturadas
+3. `senior-product-owner` → comunicação aos stakeholders
 
 **Frontend novo no monorepo:**
 1. `senior-react-developer` → componente + testes RTL
