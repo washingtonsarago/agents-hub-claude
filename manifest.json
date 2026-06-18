@@ -1,7 +1,7 @@
 {
   "version": 1,
   "channel": "stable",
-  "updated_at": "2026-05-07",
+  "updated_at": "2026-06-18",
   "repo": "EMS-NCTECH/agents-hub-claude",
   "agents": [
     {
@@ -165,6 +165,24 @@
       "scope": "user",
       "description": "Use when the user needs end-user-facing documentation: API reference polish, getting-started guides, tutorials, knowledge-base articles, README rewrites, migrat",
       "team": "docs"
+    },
+    {
+      "name": "ux-designer-mobile",
+      "version": "1.0.0",
+      "path": "agents/ux-designer-mobile.md",
+      "sha256": "1628f65fcdcf0b7eaa22c3eba837ad1645e7346583addf9cede1dda703ce97a5",
+      "scope": "user",
+      "description": "Use when the user needs mobile UX/UI design work: native iOS/Android or cross-platform (React Native, Flutter) experiences, touch and gesture interaction, mobil",
+      "team": "product"
+    },
+    {
+      "name": "ux-designer-web",
+      "version": "1.0.0",
+      "path": "agents/ux-designer-web.md",
+      "sha256": "a0d9d070186dcc4504fc40099a774c071b67ec3511fc3237cb386c0f2ba96e71",
+      "scope": "user",
+      "description": "Use when the user needs web UX/UI design work: responsive layouts across breakpoints, desktop and pointer + keyboard interaction, web information architecture a",
+      "team": "product"
     }
   ],
   "commands": [
