@@ -1,7 +1,7 @@
 {
   "version": 1,
   "channel": "stable",
-  "updated_at": "2026-06-18",
+  "updated_at": "2026-06-22",
   "repo": "EMS-NCTECH/agents-hub-claude",
   "agents": [
     {
@@ -301,6 +301,22 @@
   ],
   "skills": [
     {
+      "name": "adr",
+      "version": "1.0.0",
+      "scope": "user",
+      "description": "Gera Architecture Decision Records (ADR) estruturados em Markdown a partir de uma decisao tecnica, com contexto, opcoes avaliadas, trade-offs, decisao e consequ",
+      "files": [
+        {
+          "path": "skills/adr/SKILL.md",
+          "sha256": "4049cc65115872479d7cc8c88399f3feb0984433779ce4bbd6f487457f548728"
+        },
+        {
+          "path": "skills/adr/templates/adr-template.md",
+          "sha256": "5e095fd0df9e9b5ebf46b37533375b4326a23995a9b2a45b91652ce066de8c28"
+        }
+      ]
+    },
+    {
       "name": "architecture-diagram",
       "version": "1.0.0",
       "scope": "user",
@@ -329,6 +345,54 @@
         {
           "path": "skills/er-diagram/templates/er_template.py",
           "sha256": "468f8e86a277c46508a66e76a877da3a2a56ffed4fd08f3eafb051b41fd10df7"
+        }
+      ]
+    },
+    {
+      "name": "postmortem",
+      "version": "1.0.0",
+      "scope": "user",
+      "description": "Gera um postmortem blameless de incidente em Markdown, com resumo de impacto, timeline, analise de causa-raiz (5 Whys / contributing factors), o que funcionou/f",
+      "files": [
+        {
+          "path": "skills/postmortem/SKILL.md",
+          "sha256": "d9854288f32ed8fe7e75de1abd0ca668b88c454838d659c159a5d75fffc9cebb"
+        },
+        {
+          "path": "skills/postmortem/templates/postmortem.md",
+          "sha256": "7f683cc9ed3675cc9fd4e0bdbc3ea03a95767458eb6d640a43a9e6d5dbee6d69"
+        }
+      ]
+    },
+    {
+      "name": "pr-review",
+      "version": "1.0.0",
+      "scope": "user",
+      "description": "Gera um relatorio padronizado de revisao de Pull Requests do repositorio em Markdown, no formato PR-REVIEW-AAAA-MM-DD.md usado pelo time. Use quando o usuario p",
+      "files": [
+        {
+          "path": "skills/pr-review/SKILL.md",
+          "sha256": "46dfeeb637160e6dcdf915bf64d44cbb45ffd1b3367f320b7ea6bf13f5a119d9"
+        },
+        {
+          "path": "skills/pr-review/templates/pr-review.md",
+          "sha256": "f3e609ceb0b7726dcd0cc5fa81f3e621a2cd16e7fe4778b49d6843ce4443a4d0"
+        }
+      ]
+    },
+    {
+      "name": "product-brief",
+      "version": "1.0.0",
+      "scope": "user",
+      "description": "Gera um one-pager de produto (PRD enxuto) estruturado em Markdown para alinhar um problema, publico, outcome, escopo e metricas antes do build. Use quando o usu",
+      "files": [
+        {
+          "path": "skills/product-brief/SKILL.md",
+          "sha256": "86f9bc504509065595b4ec16cf4ccbc71a60c10fb9c869bb7a0ff500589de854"
+        },
+        {
+          "path": "skills/product-brief/templates/one-pager.md",
+          "sha256": "0584cdc53a83a3125d5bbe71a8aad365d138cff4c7cdda734fe0195dcec1cee7"
         }
       ]
     },
@@ -365,6 +429,22 @@
         {
           "path": "skills/sequence-diagram/templates/sequence_template.py",
           "sha256": "2bdceba22bf19e4506fc91423c85ef9abbb03dc4cbfbf2f46487862cb93cab18"
+        }
+      ]
+    },
+    {
+      "name": "test-plan",
+      "version": "1.0.0",
+      "scope": "user",
+      "description": "Gera um plano de testes estruturado em Markdown para uma feature, bug ou release, cobrindo escopo, estrategia (piramide de testes), casos por nivel (unit/integr",
+      "files": [
+        {
+          "path": "skills/test-plan/SKILL.md",
+          "sha256": "dbbe8d31dfac659293475c98bf720c4231896b8ff4ff4f7386ea25cf22dc9754"
+        },
+        {
+          "path": "skills/test-plan/templates/test-plan.md",
+          "sha256": "016074e0867428c3f8a38724da1bf703e2d60d8f30de3f74dceda244dbcda584"
         }
       ]
     }
