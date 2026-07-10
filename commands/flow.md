@@ -21,16 +21,16 @@ Take an idea from "why are we doing this" to "merged, measured change" by routin
 
 Run phases in order. Each phase has an entry contract, a designated agent/command, and an **exit gate**. Do not advance past a gate that is not green. The **GOAL metric** established in Phase 0 is the thread — carry it forward into every phase's brief.
 
-### Phase 0 — GOAL (Discovery)
+### Phase 0 — GOAL (North-Star)
 
-**Command:** `/discovery`
+**Command:** `/goal`
 **Inputs:** the user intent, `business.md`.
-**Produces:** a discovery brief at `docs/discovery/<slug>.md` — Problem Statement, affected users, JTBD outcome, and a **success metric with baseline + target**, ending in a **Go / No-go / Learn-more** recommendation.
-**Exit gate:** recommendation is **Go**, and the success metric is concrete (named metric, baseline value + source, target + date). A **No-go** stops the flow; **Learn-more** pauses it until the flagged experiments run.
-**Carry-forward:** copy the success metric into `task.md` section 0 as the **GOAL metric** — this is the anchor every later phase must reference.
-**Memory side-effect:** none yet; discovery is exploratory.
+**Produces:** a north-star at `docs/goals/<slug>.md` — one **Objective**, 2–4 **Key Results** each with a **baseline + target**, **guardrails** (what must not get worse), and **non-goals**.
+**Exit gate:** exactly one objective; every KR has a named baseline (value + source) and a target + date, or is explicitly marked `[baseline unknown → measure first]`; at least one counter-metric present. If the *problem itself* is unvalidated, run `/discovery` first, then return here.
+**Carry-forward:** copy the Objective + KRs into `task.md` section 0 as the **GOAL** — this is the anchor every later phase must reference.
+**Memory side-effect:** none yet; the goal is strategy, not a system change.
 
-> The GOAL phase is what separates this from a plain delivery chain: if you can't state the measurable outcome and its baseline, you're not ready to spec.
+> The GOAL phase is what separates this from a plain delivery chain: if you can't state the objective and its KR baselines, you're not ready to spec.
 
 ### Phase 1 — DEFINE (Spec / PO)
 
@@ -111,13 +111,15 @@ Run phases in order. Each phase has an entry contract, a designated agent/comman
 <!-- created: YYYY-MM-DD -->
 # Change: <human title>
 
-## 0. GOAL _(from /discovery — the anchor for every phase)_
-**Discovery brief:** docs/discovery/<slug>.md
+## 0. GOAL _(from /goal — the anchor for every phase)_
+**North-star:** docs/goals/<slug>.md
 **Objective (why):**
-**Success metric:** <name>
-**Baseline:** <value> (source: <where>)  →  **Target:** <goal> by <date>
-**Baseline at ship:** _(filled in Phase 6)_
-**Recommendation:** Go
+**Key Results:**
+| # | KR | Baseline (source) | Target | By | @ship |
+|---|---|---|---|---|---|
+| KR1 | <metric> | <value> (<source>) | <value> | <date> | _(Phase 6)_ |
+**Guardrails:** <what must not get worse>
+**Non-goals:** <what this deliberately ignores>
 
 ## 1. Description _(DEFINE — PO)_
 **Problem:**
