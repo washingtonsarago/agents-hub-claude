@@ -2,7 +2,7 @@
 # ahc installer — clones the hub via git and configures SessionStart hook
 set -euo pipefail
 
-REPO="${AHC_REPO:-EMS-NCTECH/agents-hub-claude}"
+REPO="${AHC_REPO:-washingtonsarago/agents-hub-claude}"
 BRANCH="${AHC_BRANCH:-main}"
 BIN_DIR="${AHC_BIN_DIR:-$HOME/.local/bin}"
 CLAUDE_DIR="$HOME/.claude"

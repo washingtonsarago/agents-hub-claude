@@ -331,19 +331,23 @@ Manifest schema bump v1 → v2 com migration path no `ahc sync` pra versões ant
 
 ## 8. Novos artefatos (skills + commands)
 
-### 8.1 Skills do backlog do PO  **[espera]**
+### 8.1 Skills do backlog do PO
 
-Vindas do brainstorm anterior. Atacar conforme demanda real do time:
+Vindas do brainstorm anterior. Priorizado por RICE.
 
-| Skill | RICE | Esforço |
-|---|---|---|
-| `data-generator` | 132 | 24h |
-| `deployment-diagram` | 128 | 16h |
-| `runbook` | 120 | 12h |
-| `openapi-visual` | 104 | 16h |
-| `terraform-plan-summary` | 96 | 12h |
-| `postmortem` (overlap parcial com `/incident-response`) | 88 | 12h |
-| `state-machine-diagram` | 80 | 12h |
+**Entregue em 2026-07-01** (5 de 7): `data-generator`, `deployment-diagram`, `runbook`, `state-machine-diagram` e `postmortem` (esta já havia sido entregue antes). Todas registradas no `manifest.json` (validator: 0 errors) e com templates testados.
+
+**Pendentes** (atacar conforme demanda real do time):
+
+| Skill | RICE | Esforço | Status |
+|---|---|---|---|
+| `data-generator` | 132 | 24h | ✅ entregue (2026-07-01) |
+| `deployment-diagram` | 128 | 16h | ✅ entregue (2026-07-01) |
+| `runbook` | 120 | 12h | ✅ entregue (2026-07-01) |
+| `openapi-visual` | 104 | 16h | ⬜ pendente |
+| `terraform-plan-summary` | 96 | 12h | ⬜ pendente |
+| `postmortem` (overlap parcial com `/incident-response`) | 88 | 12h | ✅ entregue |
+| `state-machine-diagram` | 80 | 12h | ✅ entregue (2026-07-01) |
 
 ### 8.2 `/draft-pr` — PR description gerada do diff + Jira + convenções
 
