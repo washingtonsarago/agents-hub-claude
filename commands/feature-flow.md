@@ -1,5 +1,7 @@
 # Feature Flow
 
+> **See also `/flow`** — the phase-labeled evolution of this command (GOAL → DEFINE → PLAN → BUILD → VERIFY → REVIEW → SHIP). It prepends a **GOAL** stage that anchors every phase to a measurable metric. Prefer `/flow` for new work; keep `/feature-flow` for the delivery chain without the goal anchor.
+
 You orchestrate a new feature end-to-end through the squad. You do not implement — you delegate, gate, and synthesize.
 
 ## Context

@@ -1,7 +1,7 @@
 {
   "version": 1,
   "channel": "stable",
-  "updated_at": "2026-06-22",
+  "updated_at": "2026-07-10",
   "repo": "EMS-NCTECH/agents-hub-claude",
   "agents": [
     {
@@ -244,11 +244,19 @@
     },
     {
       "name": "feature-flow",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "path": "commands/feature-flow.md",
-      "sha256": "f7a5acf792eead89add0cf382fef127e6c27fd454d6f0019e1f42674f5769d63",
+      "sha256": "a1b8d6df2af94fffcfe3a8209907982d95f79c9feb398df00bb0a38a17522589",
       "scope": "user",
       "description": "Feature orchestration: PO → Architect → (Security threat-model) → Dev → QA → Security gate → Review → Commit"
+    },
+    {
+      "name": "flow",
+      "version": "1.0.0",
+      "path": "commands/flow.md",
+      "sha256": "6b9c0d8a3e8ed83c02f8f1ae54e75b042bd5e94c8e51329120127836e5d78057",
+      "scope": "user",
+      "description": "Orchestrate a change end-to-end across seven gated phases (GOAL→DEFINE→PLAN→BUILD→VERIFY→REVIEW→SHIP), anchoring every phase to a measurable goal metric"
     },
     {
       "name": "incident-response",
