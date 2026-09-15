@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "channel": "stable",
+  "updated_at": "2026-08-14",
+  "repo": "fixture/local",
+  "agents": [
+    {
+      "name": "test-agent",
+      "version": "1.0.0",
+      "path": "agents/test-agent.md",
+      "sha256": "e9f8ac76d5bba4c61d00a7113d20c0ccd73b789b5babbdbf746efa4d9e202f21",
+      "scope": "user",
+      "description": "Test agent fixture used by tests.",
+      "team": "backend"
+    }
+  ],
+  "commands": [
+    {
+      "name": "test-command",
+      "version": "1.0.0",
+      "path": "commands/test-command.md",
+      "sha256": "c3acee842231c03bbb0a8b6dabe9700be10b5fc31d9ca2255d209993b1d7d5bf",
+      "scope": "user",
+      "description": "Test command fixture used by tests."
+    }
+  ],
+  "autonomous": [
+    {
+      "name": "test-autonomous",
+      "version": "1.0.0",
+      "path": "autonomous/test-autonomous.md",
+      "sha256": "09f8efd0beef02b260cc369b3992e2f7a36a7a9d336220950fa431365c4d4bef",
+      "scope": "user",
+      "description": "Autonomous agent fixture used by tests.",
+      "schedule": "7 12 * * 1-5",
+      "mode": "read-only"
+    }
+  ],
+  "skills": [
+    {
+      "name": "test-skill",
+      "version": "1.0.0",
+      "scope": "user",
+      "description": "Test skill fixture used by tests.",
+      "files": [
+        {
+          "path": "skills/test-skill/SKILL.md",
+          "sha256": "81576b35d4c56b5019699a0b64c5cec77ec5ece2e3329f237883b94cc9c67875"
+        },
+        {
+          "path": "skills/test-skill/templates/helper.py",
+          "sha256": "e227748d9d48a4fcb7410b3dc7ade15d5f7b99337766095b1104bbf61a229180"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+.claude/*
+!.claude/memory/
+.DS_Store
+node_modules/
+*.log
+
+# Office lockfiles (~$Foo.docx, ~$Foo.pptx)
+~$*
+
+# Generated presentation binary (built from EXECUTIVE-PRESENTATION.md via scripts/build-presentation.py)
+docs/*.pptx
+
+# Python bytecode
+__pycache__/
+*.pyc
+
+# conteudo interno nao vai para o espelho publico
+docs/
+.claude/

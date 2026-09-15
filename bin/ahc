@@ -1,0 +1,1713 @@
+#!/usr/bin/env node
+// ahc — agents-hub-claude CLI
+// Zero-dep Node. Commands: sync | list | pin | unpin | config | doctor
+
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const https = require('https');
+const http = require('http');
+const crypto = require('crypto');
+const { URL } = require('url');
+const { execSync, execFileSync } = require('child_process');
+
+const HOME = os.homedir();
+const CLAUDE_DIR = path.join(HOME, '.claude');
+const AGENTS_DIR = path.join(CLAUDE_DIR, 'agents');
+const COMMANDS_DIR = path.join(CLAUDE_DIR, 'commands');
+const SKILLS_DIR = path.join(CLAUDE_DIR, 'skills');
+const AUTONOMOUS_DIR = path.join(CLAUDE_DIR, 'autonomous');
+const CACHE_DIR = path.join(CLAUDE_DIR, '.ahc-cache');
+const LOCK_FILE = path.join(CLAUDE_DIR, '.ahc-lock.json');
+const CONFIG_FILE = path.join(CLAUDE_DIR, '.ahc-config.json');
+
+// Single-file categories (one .md per item, target = <dir>/<name>.md).
+const CATEGORIES = [
+  { key: 'agents',   manifestKey: 'agents',   dir: AGENTS_DIR,   label: 'agent',   ext: '.md' },
+  { key: 'commands', manifestKey: 'commands', dir: COMMANDS_DIR, label: 'command', ext: '.md' },
+  // Autonomous specs are not read by Claude Code — they are distributed so every
+  // dev can see what runs unattended on the org's behalf, and kill it if needed.
+  { key: 'autonomous', manifestKey: 'autonomous', dir: AUTONOMOUS_DIR, label: 'autonomous agent', ext: '.md' },
+];
+
+const DEFAULT_CONFIG = {
+  repo: 'washingtonsarago/agents-hub-claude',
+  branch: 'main',
+  channel: 'stable',
+};
+
+// PAT fine-grained de leitura da org (`Contents` + `Metadata`, só o hub).
+// Entra no BUILD vazio — vazio significa "esta origem não existe" — e recebe o
+// valor real na última tarefa da demanda 001, gravado pelo orquestrador a
+// partir de um arquivo local. A linha abaixo é o marcador: ele aparece uma
+// única vez neste arquivo e o literal é idêntico ao do install.sh
+// (`test/embedded-token.test.js` trava as duas invariantes, e o make-mirror
+// esvazia o valor para o token da org nunca sair dela).
+const EMBEDDED_TOKEN = ''; // AHC-EMBEDDED-TOKEN
+
+const GIT_BASE_DEFAULT = 'https://github.com';
+
+// Override de base aceito **só** para o harness de teste, e só em loopback
+// literal. Nome de host fica de fora de propósito (C7 do threat model): um
+// `localhost` depende de resolução, e /etc/hosts, NIS ou DNS podem apontá-lo
+// para fora da máquina — o que mandaria os tokens da cascata para lá. O regex
+// é âncorado nas duas pontas, então userinfo (`http://a@127.0.0.1:1`), path,
+// query, fragmento e https externo não passam.
+const TEST_BASE_RE = /^http:\/\/(127\.0\.0\.1|\[::1\]):[0-9]{1,5}$/;
+
+let testBaseResolved = false;
+let testBase = null;
+
+// Base de todas as URLs git do hub. Sempre `https://github.com`, exceto sob o
+// override de teste válido.
+function gitBaseURL() {
+  if (!testBaseResolved) {
+    testBaseResolved = true;
+    const raw = process.env.AHC_TEST_GIT_BASE_URL;
+    if (raw) {
+      if (TEST_BASE_RE.test(raw)) {
+        testBase = raw;
+        err(`[ahc] modo de teste: base ${raw}`);
+      } else {
+        err(
+          `[ahc] aviso: AHC_TEST_GIT_BASE_URL ignorada (só http://127.0.0.1:<porta> ` +
+          `ou http://[::1]:<porta>, sem userinfo, path ou query); usando ${GIT_BASE_DEFAULT}`
+        );
+      }
+    }
+  }
+  return testBase || GIT_BASE_DEFAULT;
+}
+
+// Origem "embutido" da cascata. A troca por `AHC_TEST_EMBEDDED_TOKEN` vale só
+// quando a base é o loopback do harness; sem isso, uma variável esquecida no
+// shell (ou plantada por um snippet) não muda o que vai para o github.com.
+// Nos dois sentidos a garantia é a mesma: o literal embutido só é apresentado
+// a `github.com`, e o token de teste só ao loopback.
+function embeddedToken() {
+  if (gitBaseURL() !== GIT_BASE_DEFAULT) return process.env.AHC_TEST_EMBEDDED_TOKEN || '';
+  return EMBEDDED_TOKEN;
+}
+
+const ARGS = process.argv.slice(2);
+const FLAGS = {
+  quiet: ARGS.includes('--quiet'),
+  timeout: parseInt((ARGS.find(a => a.startsWith('--timeout')) || '').split('=')[1] || '10', 10) * 1000 || 10000,
+  force: ARGS.includes('--force'),
+};
+
+function log(...a) { if (!FLAGS.quiet) console.log(...a); }
+function err(...a) { console.error(...a); }
+
+function readJSON(p, fallback) {
+  try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return fallback; }
+}
+function writeJSON(p, obj) {
+  fs.mkdirSync(path.dirname(p), { recursive: true });
+  fs.writeFileSync(p, JSON.stringify(obj, null, 2) + '\n');
+}
+
+// Toda escrita da config passa por aqui, com ou sem `token` no conteúdo.
+// Porquê: a config pode ganhar um PAT a qualquer momento (`ahc config token=…`),
+// e escrever direto no destino para depois dar chmod deixa uma janela em que o
+// arquivo já tem o token com modo 644 — exatamente o estado que o doctor marca
+// com ✗. tmp com modo 600 + rename fecha a janela e é atômico: o arquivo final
+// nunca fica pela metade, e o rename carrega o modo 600 do tmp, então um arquivo
+// 644 pré-existente termina em 600 sem precisar de chmod no destino.
+function writeConfigFile(cfg) {
+  const dir = path.dirname(CONFIG_FILE);
+  fs.mkdirSync(dir, { recursive: true });
+  const data = JSON.stringify(cfg, null, 2) + '\n';
+  const tmp = path.join(dir, `.ahc-config.json.${process.pid}.${crypto.randomBytes(6).toString('hex')}.tmp`);
+  try {
+    // `wx` garante que não estamos reaproveitando um tmp de outro processo.
+    fs.writeFileSync(tmp, data, { mode: 0o600, flag: 'wx' });
+    // O `mode` do open é filtrado pelo umask; um chmod no tmp (que ainda não é
+    // o arquivo final, logo não expõe nada) garante 600 exatos em qualquer umask.
+    fs.chmodSync(tmp, 0o600);
+    fs.renameSync(tmp, CONFIG_FILE);
+  } catch (e) {
+    try { fs.unlinkSync(tmp); } catch {}
+    throw e;
+  }
+}
+
+function loadConfig() { return { ...DEFAULT_CONFIG, ...readJSON(CONFIG_FILE, {}) }; }
+function loadLock() {
+  const lock = readJSON(LOCK_FILE, { agents: {}, commands: {}, autonomous: {}, skills: {}, pins: {} });
+  if (!lock.agents) lock.agents = {};
+  if (!lock.commands) lock.commands = {};
+  if (!lock.autonomous) lock.autonomous = {};
+  if (!lock.skills) lock.skills = {};
+  if (!lock.pins) lock.pins = {};
+  return lock;
+}
+function saveLock(lock) { writeJSON(LOCK_FILE, lock); }
+
+function fetchURL(url) {
+  return new Promise((resolve, reject) => {
+    const u = new URL(url);
+    const lib = u.protocol === 'file:' ? null : (u.protocol === 'http:' ? http : https);
+    if (!lib) {
+      try { resolve(fs.readFileSync(u.pathname, 'utf8')); } catch (e) { reject(e); }
+      return;
+    }
+    const req = lib.get(url, { timeout: FLAGS.timeout, headers: { 'User-Agent': 'ahc' } }, res => {
+      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+        fetchURL(res.headers.location).then(resolve, reject);
+        return;
+      }
+      if (res.statusCode !== 200) { reject(new Error(`HTTP ${res.statusCode} ${url}`)); return; }
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => resolve(data));
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(new Error('timeout')); });
+  });
+}
+
+function rawURL(cfg, filePath) {
+  if (cfg.repo.startsWith('file://') || cfg.repo.startsWith('http')) {
+    return `${cfg.repo.replace(/\/$/, '')}/${filePath}`;
+  }
+  return `https://raw.githubusercontent.com/${cfg.repo}/${cfg.branch}/${filePath}`;
+}
+
+function isGitRepo(cfg) {
+  return !cfg.repo.startsWith('file://') && !cfg.repo.startsWith('http');
+}
+
+// ---------------------------------------------------------------------------
+// Acesso ao hub por git (demanda 001-ahc-pat-auth, T5)
+//
+// Regras que não podem regredir:
+//  - nada de shell: `execFileSync` sempre, sem interpolar config em string;
+//  - `repo` e `branch` validados ANTES de qualquer rede;
+//  - URL explícita no fetch (nunca `origin`), para que um `origin` antigo —
+//    inclusive com credencial na userinfo — não seja usado;
+//  - env não interativo e saneado (C5/C6), com teto de relógio (timeout).
+// A cascata de origens (env → config → embutido → credencial git) é o T6;
+// aqui existe só a rodada `git`, e o retorno já tem a forma que ela vai usar.
+// ---------------------------------------------------------------------------
+
+// Erro de configuração: sai antes de tocar a rede e não é "offline".
+class HubConfigError extends Error {
+  constructor(message) { super(message); this.name = 'HubConfigError'; }
+}
+
+// Falha de acesso ao hub, já classificada. `advance` diz se a cascata do T6
+// deve tentar a próxima origem (só recusa de auth avança; rede, redirect e
+// desconhecido param na hora).
+class HubAccessError extends Error {
+  constructor(message, info = {}) {
+    super(message);
+    this.name = 'HubAccessError';
+    this.kind = info.kind || 'unknown';
+    this.advance = !!info.advance;
+    this.detail = info.detail || '';
+    this.source = info.source || '';
+    this.tried = info.tried || [];
+    this.refused = info.refused || [];
+  }
+}
+
+// Rótulos das origens da cascata (o T6 usa os demais).
+const SOURCE_LABELS = {
+  env: 'env (AHC_GITHUB_TOKEN)',
+  config: 'config (token em ~/.claude/.ahc-config.json)',
+  embutido: 'embutido',
+  git: 'credencial git',
+};
+function sourceLabel(id) { return SOURCE_LABELS[id] || id; }
+
+// `git rev-parse --local-env-vars`, menos GIT_CONFIG_COUNT (que é validado e
+// reaproveitado logo abaixo). Herdar qualquer uma delas faria o `reset --hard`
+// agir no repo do dev em vez de no cache (C5).
+const GIT_LOCAL_ENV_VARS = [
+  'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+  'GIT_CONFIG',
+  'GIT_CONFIG_PARAMETERS',
+  'GIT_OBJECT_DIRECTORY',
+  'GIT_DIR',
+  'GIT_WORK_TREE',
+  'GIT_IMPLICIT_WORK_TREE',
+  'GIT_GRAFT_FILE',
+  'GIT_INDEX_FILE',
+  'GIT_NO_REPLACE_OBJECTS',
+  'GIT_REPLACE_REF_BASE',
+  'GIT_PREFIX',
+  'GIT_SHALLOW_FILE',
+  'GIT_COMMON_DIR',
+];
+
+// C6: o índice das chaves injetadas parte do GIT_CONFIG_COUNT herdado, então
+// ele entra numa soma. Um valor fora de `^[0-9]+$` aborta antes de chamar o
+// git e sem ecoar o valor (ele pode conter `$(...)` plantado no ambiente).
+function inheritedGitConfigCount() {
+  const raw = process.env.GIT_CONFIG_COUNT;
+  if (raw === undefined || raw === '') return 0;
+  if (!/^[0-9]+$/.test(raw) || raw.length > 4) {
+    throw new HubConfigError(
+      'GIT_CONFIG_COUNT herdado do ambiente é inválido (esperado só dígitos). ' +
+      'Nenhum comando git foi executado. Rode `unset GIT_CONFIG_COUNT` e tente de novo.'
+    );
+  }
+  return Number(raw);
+}
+
+// Env de toda invocação do git. Não interativo, locale fixo (a classificação
+// casa mensagens em inglês), variáveis locais e de trace removidas.
+// `extra` são as chaves de config da rodada — no T5 só a rodada `git`, que não
+// acrescenta nada; o T6 injeta aqui o header com escopo de URL.
+function gitEnv(opts = {}) {
+  const timeoutSec = Math.max(10, Math.ceil((opts.timeoutMs || FLAGS.timeout) / 1000));
+  const env = { ...process.env };
+
+  for (const key of GIT_LOCAL_ENV_VARS) delete env[key];
+  // GIT_TRACE, GIT_TRACE_CURL, GIT_TRACE_PACKET…: todos imprimem o header de
+  // auth quando GIT_TRACE_REDACT=0 (C9). As GIT_CONFIG_KEY_i/VALUE_i herdadas
+  // ficam: elas são o "acrescenta a partir do índice N" do contrato.
+  for (const key of Object.keys(env)) {
+    if (key.startsWith('GIT_TRACE')) delete env[key];
+  }
+  delete env.GIT_CURL_VERBOSE;
+  env.GIT_TRACE_REDACT = '1';
+
+  // Não interativo: nem terminal, nem askpass, nem diálogo do GCM (AC-05/AC-14).
+  env.GIT_TERMINAL_PROMPT = '0';
+  env.GIT_ASKPASS = '';
+  env.SSH_ASKPASS = '';
+  env.GCM_INTERACTIVE = 'never';
+  // C4: classificação estável, independente do locale do dev.
+  env.LC_ALL = 'C';
+  env.LANGUAGE = 'C';
+
+  const base = inheritedGitConfigCount();
+  const entries = [
+    ['http.lowSpeedLimit', '1000'],
+    ['http.lowSpeedTime', String(timeoutSec)],
+    ...(opts.extra || []),
+  ];
+  entries.forEach(([key, value], i) => {
+    env[`GIT_CONFIG_KEY_${base + i}`] = key;
+    env[`GIT_CONFIG_VALUE_${base + i}`] = value;
+  });
+  env.GIT_CONFIG_COUNT = String(base + entries.length);
+  return env;
+}
+
+// C9: nada de token (nem o base64 do `x-access-token:<token>`) pode sair em
+// stdout/stderr, e o eco de stderr do git fica na primeira linha.
+function secretCandidates() {
+  const out = [];
+  const push = (v) => { if (typeof v === 'string' && v.length >= 4) out.push(v); };
+  push(process.env.AHC_GITHUB_TOKEN);
+  const cfgToken = readJSON(CONFIG_FILE, {}).token;
+  push(cfgToken);
+  push(embeddedToken());
+  return out;
+}
+
+function redact(text) {
+  let s = text === undefined || text === null ? '' : String(text);
+  s = s.replace(/Authorization:[^\r\n]*/gi, 'Authorization: <redacted>');
+  for (const secret of secretCandidates()) {
+    for (const form of [secret, Buffer.from(`x-access-token:${secret}`).toString('base64')]) {
+      if (form) s = s.split(form).join('<redacted>');
+    }
+  }
+  const first = s.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)[0] || '';
+  return first.length > 300 ? `${first.slice(0, 300)}…` : first;
+}
+
+// Só linhas `fatal:`/`error:` contam (C4): linhas `remote:` são texto do
+// servidor e já derrubaram classificação antes.
+const GIT_ERROR_LINE_RE = /^(?:fatal|error):/i;
+
+// Tabela da classificação (§5 + emenda 2 do §7). `gitKind` é o rótulo quando a
+// falha vem da rodada `git`, que é a última: nela nada "avança".
+const GIT_FAILURE_RULES = [
+  {
+    re: /Could not resolve host|Failed to connect|Couldn't connect to server|Connection refused|Connection reset|Connection timed out|Operation timed out|timed out|Empty reply from server|SSL|TLS|certificate/i,
+    kind: 'network', advance: false,
+  },
+  { re: /returned error: 30\d/i, kind: 'redirect', advance: false },
+  // T6b (achado do E1 contra o GitHub real, 2026-09-15): `branch` inexistente
+  // responde `fatal: couldn't find remote ref refs/heads/<branch>` no fetch e
+  // `fatal: Remote branch <b> not found in upstream <remote>` no clone. As duas
+  // formas são o MESMO diagnóstico — a credencial autenticou, a branch é que
+  // não existe — então não avançam a cascata (apresentar as origens seguintes
+  // só repetiria a mesma resposta) e ganham mensagem própria: em `unknown` o
+  // dev recebia "falha não classificada", que não explica nada.
+  {
+    re: /couldn(?:'|’)?t find remote ref|could not find remote ref|Remote branch .* not found in upstream/i,
+    kind: 'noref', advance: false,
+  },
+  {
+    re: /could not read Username|could not read Password|terminal prompts disabled/i,
+    kind: 'refused', gitKind: 'unavailable', advance: true,
+  },
+  { re: /Authentication failed|returned error: 401/i, kind: 'refused', advance: true },
+  { re: /returned error: 403|Write access to repository not granted/i, kind: 'refused', advance: true },
+  {
+    re: /returned error: 404|repository .* not found|Repository not found/i,
+    kind: 'refused', gitKind: 'notfound', advance: true,
+  },
+];
+
+function gitErrorLines(e) {
+  const raw = (e && e.stderr && e.stderr.toString()) || '';
+  return raw.split(/\r?\n/).map((l) => l.trim()).filter((l) => GIT_ERROR_LINE_RE.test(l));
+}
+
+// `round`: 'git' (rodada da credencial do dev) ou 'token' (cascata do T6).
+function classifyGitFailure(e, round = 'git') {
+  // Morto pelo teto de relógio do ahc, ou por um sinal: conta como rede.
+  if (e && (e.code === 'ETIMEDOUT' || e.killed || (e.signal && e.status === null && !e.code))) {
+    return { kind: 'network', advance: false, detail: 'o git excedeu o tempo limite do ahc' };
+  }
+  // Falha de spawn (git ausente, sem permissão): não é recusa de credencial.
+  if (e && typeof e.code === 'string') {
+    return { kind: 'unknown', advance: false, detail: `não foi possível executar o git (${e.code})` };
+  }
+  const lines = gitErrorLines(e);
+  for (const line of lines) {
+    for (const rule of GIT_FAILURE_RULES) {
+      if (rule.re.test(line)) {
+        const kind = round === 'git' && rule.gitKind ? rule.gitKind : rule.kind;
+        return { kind, advance: round === 'git' ? false : rule.advance, detail: redact(line) };
+      }
+    }
+  }
+  return { kind: 'unknown', advance: false, detail: redact(lines[0] || (e && e.message) || '') };
+}
+
+const REPO_SLUG_RE = /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/;
+
+// Validação de `repo`/`branch` antes de qualquer rede. `repo` vai para a URL e
+// `branch` vira argumento do git; sem isso, um valor vindo do config poderia
+// virar opção do git (`--upload-pack=…`) ou um path arbitrário.
+function validateHubRef(cfg, env) {
+  if (typeof cfg.repo !== 'string' || !REPO_SLUG_RE.test(cfg.repo)) {
+    throw new HubConfigError(
+      'repo inválido em ~/.claude/.ahc-config.json: esperado <owner>/<nome> com letras, dígitos, ponto, hífen ou underscore. ' +
+      'Corrija com `ahc config repo=washingtonsarago/agents-hub-claude`.'
+    );
+  }
+  if (typeof cfg.branch !== 'string' || cfg.branch === '' || cfg.branch.startsWith('-')) {
+    throw new HubConfigError(
+      'branch inválida em ~/.claude/.ahc-config.json: não pode ser vazia nem começar com "-". ' +
+      'Corrija com `ahc config branch=main`.'
+    );
+  }
+  try {
+    // Comando puramente local (não abre rede e não precisa de repo). O cwd
+    // neutro evita que `@{-1}` e afins resolvam contra o repo de trabalho do
+    // dev; o GIT_DIR herdado já saiu do env em `gitEnv()`.
+    execFileSync('git', ['check-ref-format', '--branch', cfg.branch], {
+      cwd: os.tmpdir(),
+      env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: 5000,
+      windowsHide: true,
+    });
+  } catch {
+    throw new HubConfigError(
+      'branch inválida em ~/.claude/.ahc-config.json: `git check-ref-format --branch` recusou o valor. ' +
+      'Corrija com `ahc config branch=main`.'
+    );
+  }
+}
+
+function runGit(args, env, timeout) {
+  return execFileSync('git', args, {
+    cwd: CACHE_DIR,
+    env,
+    timeout,
+    // stdin fechado: mesmo que uma variável de prompt escape, não há o que ler.
+    // stderr em pipe porque a classificação depende dele e todo eco passa por
+    // `redact()` antes de chegar ao terminal.
+    stdio: ['ignore', 'pipe', 'pipe'],
+    encoding: 'utf8',
+    maxBuffer: 8 * 1024 * 1024,
+    windowsHide: true,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Cascata de origens de credencial (demanda 001-ahc-pat-auth, T6)
+//
+// Ordem fixa do §5: env → config → embutido → credencial git. As três
+// primeiras existem só quando o valor não é vazio; a rodada `git` é sempre a
+// última e sempre existe (ela pode ficar "indisponível", que é outra coisa:
+// tentada, sem credencial para apresentar).
+// ---------------------------------------------------------------------------
+
+function credentialSources(cfg) {
+  const sources = [];
+  const push = (id, value) => {
+    // C11: `token` que não é string (número, objeto, null) não vira origem —
+    // ele chegaria ao header como `[object Object]` e queimaria uma rodada.
+    if (typeof value === 'string' && value !== '') sources.push({ id, token: value });
+  };
+  push('env', process.env.AHC_GITHUB_TOKEN);
+  push('config', cfg && cfg.token);
+  push('embutido', embeddedToken());
+  sources.push({ id: 'git', token: null });
+  return sources;
+}
+
+// Chaves de config de uma rodada de token (emenda 1 do §7; C1, C2).
+// `url` é exatamente a URL passada ao git — o escopo depende disso.
+function tokenConfigEntries(url, token) {
+  const basic = Buffer.from(`x-access-token:${token}`).toString('base64');
+  return [
+    // Genérico de propósito: o reset vazio de `credential.helper` zera também
+    // o helper com escopo de URL (`credential.<url>.helper`, o formato que o
+    // `gh auth setup-git` grava), então nenhum helper do dev responde ao 401
+    // de uma rodada rotulada como env/config/embutido.
+    ['credential.helper', ''],
+    // Escopo da URL completa, não `http.extraHeader` genérico:
+    //  - um `http.<base>.extraheader` do dev vence o reset genérico e faria a
+    //    credencial dele ser apresentada numa rodada de token, quebrando a
+    //    precedência e o rótulo da origem (E1/E2 do §7);
+    //  - o header genérico acompanha a URL reescrita por `url.<B>.insteadOf` e
+    //    iria para o host B (E4a); com escopo da URL de A, B não recebe (C3).
+    // O primeiro valor, vazio, zera a lista multi-valorada; o segundo injeta.
+    [`http.${url}.extraHeader`, ''],
+    [`http.${url}.extraHeader`, `Authorization: Basic ${basic}`],
+    // C2: no default (`initial`) o curl tira o header do GET redirecionado,
+    // mas o git manda o POST git-upload-pack ao novo host COM o header (E5).
+    // Com escopo porque um `followRedirects=true` com escopo no config do dev
+    // venceria um `false` genérico (E5e).
+    [`http.${url}.followRedirects`, 'false'],
+  ];
+}
+
+// Só recusa de autenticação avança a cascata. Rede, redirect e desconhecido
+// param na hora; `notfound` na rodada `git` (404 sem token) também para, com
+// mensagem própria — na rodada de token o 404 já vem classificado como recusa.
+const CASCADE_ADVANCING_KINDS = new Set(['refused', 'unavailable']);
+
+function accessWhat(c) {
+  return c.kind === 'unavailable'
+    ? `${sourceLabel('git')}: nenhuma configurada (${c.detail})`
+    : c.kind === 'network' ? `rede/timeout (${c.detail})`
+    : c.kind === 'redirect' ? `redirect recusado (${c.detail})`
+    : c.kind === 'notfound' ? `repo não encontrado (${c.detail})`
+    : c.kind === 'noref' ? `a branch não existe no repo (${c.detail})`
+    : c.kind === 'refused' ? `acesso recusado (${c.detail})`
+    : `falha não classificada (${c.detail})`;
+}
+
+// Devolve `{ cache, source, refused }`: a origem que autenticou e as que foram
+// recusadas antes dela. Nada é persistido — a cascata é refeita a cada chamada,
+// então trocar o token por env ou por config vale já na próxima, sobre o mesmo
+// cache (premissa F3 / AC-08).
+function gitRefresh(cfg) {
+  // Antes de qualquer rede e antes de qualquer escrita em disco. `gitEnv()`
+  // também é onde o GIT_CONFIG_COUNT herdado é validado (C6).
+  const baseEnv = gitEnv();
+  validateHubRef(cfg, baseEnv);
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+
+  const cache = path.join(CACHE_DIR, cfg.repo.replace(/[^a-zA-Z0-9._-]/g, '_'));
+  const url = `${gitBaseURL()}/${cfg.repo}.git`;
+  const quiet = FLAGS.quiet ? ['--quiet'] : [];
+  // Teto de relógio: o `lowSpeed` sozinho não cobre um servidor que responde
+  // devagar mas responde. 15s no hook (--timeout=5), 30s no CLI (default 10).
+  const fetchTimeout = Math.max(3 * FLAGS.timeout, 15000);
+  const cloneTimeout = 120000;
+
+  const tried = [];
+  const refused = [];
+
+  for (const src of credentialSources(cfg)) {
+    // Rodada `git`: sem header e com os helpers do dev intactos (lookup normal
+    // do git, não interativo). Rodadas de token: header com escopo da URL.
+    const isGitRound = src.id === 'git';
+    const env = isGitRound ? baseEnv : gitEnv({ extra: tokenConfigEntries(url, src.token) });
+    tried.push(src.id);
+
+    try {
+      if (fs.existsSync(path.join(cache, '.git'))) {
+        // URL explícita, nunca `origin`: um remoto antigo pode carregar
+        // credencial na userinfo e não é a fonte de verdade do hub.
+        runGit(['-C', cache, 'fetch', '--depth=1', ...quiet, url, `refs/heads/${cfg.branch}`], env, fetchTimeout);
+        runGit(['-C', cache, 'reset', '--hard', ...quiet, 'FETCH_HEAD'], env, fetchTimeout);
+      } else {
+        runGit(['clone', '--depth=1', '--branch', cfg.branch, ...quiet, url, cache], env, cloneTimeout);
+      }
+      // Sucesso: para aqui. Nenhuma origem posterior é apresentada (AC-14).
+      return { cache, source: src.id, refused: [...refused] };
+    } catch (e) {
+      const c = classifyGitFailure(e, isGitRound ? 'git' : 'token');
+      // Um clone abortado pode deixar o diretório vazio para trás; sem limpar,
+      // a próxima origem cairia no ramo do `fetch` sobre um cache inexistente.
+      try {
+        if (fs.existsSync(cache) && !fs.existsSync(path.join(cache, '.git'))) {
+          fs.rmSync(cache, { recursive: true, force: true });
+        }
+      } catch { /* o clone seguinte reclama por conta própria */ }
+
+      if (!CASCADE_ADVANCING_KINDS.has(c.kind)) {
+        // Rede, redirect, 404 sem token, não classificado: para na hora, sem
+        // apresentar mais nenhuma origem.
+        throw new HubAccessError(
+          `git ${cfg.repo}@${cfg.branch}: ${accessWhat(c)}`,
+          {
+            kind: c.kind, advance: false, detail: c.detail, source: src.id,
+            tried: [...tried], refused: [...refused],
+          }
+        );
+      }
+      // `unavailable` é a rodada `git` sem credencial nenhuma: foi tentada,
+      // mas não apresentou nada, então não entra na lista de recusadas.
+      if (c.kind !== 'unavailable') refused.push(src.id);
+    }
+  }
+
+  const labels = tried.map((id) => (
+    refused.includes(id) ? sourceLabel(id) : `${sourceLabel(id)}: nenhuma configurada`
+  ));
+  throw new HubAccessError(
+    `git ${cfg.repo}@${cfg.branch}: acesso recusado por todas as origens (${labels.join(', ')})`,
+    { kind: 'refused', advance: false, detail: '', source: '', tried, refused }
+  );
+}
+
+// ---------------------------------------------------------------------------
+// T7 — saídas da cascata (§5, "Saídas novas"). O `sync` do hook SessionStart
+// roda com `--quiet` e sem terminal: é por estas linhas que o dev (e o contexto
+// do Claude) fica sabendo que uma origem caiu ou que o acesso morreu.
+// ---------------------------------------------------------------------------
+
+// Rótulos longos das origens tentadas, com `: nenhuma configurada` para a que
+// foi tentada sem ter credencial a apresentar (a rodada `git` na CB). Mesmo
+// formato do `install.sh`, para o dev ver a mesma lista nos dois lugares.
+function triedSourceLabels(e) {
+  return e.tried
+    .map((id) => (e.refused.includes(id) ? sourceLabel(id) : `${sourceLabel(id)}: nenhuma configurada`))
+    .join(', ');
+}
+
+// Uma linha só, via `console.log`, quando alguma origem foi recusada e uma
+// seguinte autenticou. **Ignora o `--quiet` de propósito:** o stdout do hook
+// `SessionStart` chega ao contexto do Claude, e é o único canal em que o dev
+// vê que uma origem caiu antes de a última válida também cair.
+function reportRefusedSources(access) {
+  if (!access || !access.refused || access.refused.length === 0) return;
+  console.log(
+    `[ahc] aviso: hub autenticado via ${sourceLabel(access.source)}; ` +
+    `origem(ns) recusada(s): ${access.refused.map(sourceLabel).join(', ')}. Rode \`ahc doctor\`.`
+  );
+}
+
+// Linha de falha do `sync`/`list` (stderr). "Todas recusadas" tem texto literal
+// no §5; os demais casos (rede, redirect, 404, branch inexistente do T6b, não
+// classificado) mostram o que a classificação apurou — chamar de "offline" uma
+// branch inexistente é o balde `unknown` de novo, só que com outro nome.
+function hubFailureLine(e) {
+  if (e instanceof HubAccessError) {
+    if (e.kind === 'refused' && !e.source) {
+      return `[ahc] acesso ao hub recusado por todas as origens (${triedSourceLabels(e)})` +
+        ' — mantendo o cache local. Rode `ahc doctor`.';
+    }
+    return `[ahc] acesso ao hub falhou — ${redact(e.message)} — mantendo o cache local. Rode \`ahc doctor\`.`;
+  }
+  return `[ahc] offline or unreachable (${redact(e.message)}) — keeping local cache`;
+}
+
+async function readFromSource(cfg, filePath, cachePath) {
+  if (cachePath) {
+    return fs.readFileSync(path.join(cachePath, filePath), 'utf8');
+  }
+  return await fetchURL(rawURL(cfg, filePath));
+}
+
+function sha256(s) { return crypto.createHash('sha256').update(s).digest('hex'); }
+
+async function syncCategory(cat, manifest, lock, cfg, cachePath) {
+  const items = manifest[cat.manifestKey] || [];
+  if (items.length === 0) return { added: 0, updated: 0, skipped: 0, pinned: 0 };
+
+  fs.mkdirSync(cat.dir, { recursive: true });
+  let updated = 0, added = 0, skipped = 0, pinned = 0;
+
+  for (const item of items) {
+    if (item.scope && item.scope !== 'user') continue;
+    const target = path.join(cat.dir, `${item.name}${cat.ext}`);
+    const current = lock[cat.key][item.name];
+    const pin = lock.pins[item.name];
+
+    if (pin && pin !== item.version && !FLAGS.force) {
+      pinned++;
+      log(`[pinned]  ${cat.label} ${item.name} @ ${pin} (remote ${item.version})`);
+      continue;
+    }
+    if (current && current.sha256 === item.sha256 && fs.existsSync(target)) { skipped++; continue; }
+
+    const body = await readFromSource(cfg, item.path, cachePath);
+    const got = sha256(body);
+    if (got !== item.sha256) {
+      err(`[ahc] hash mismatch for ${cat.label} ${item.name}: expected ${item.sha256}, got ${got}`);
+      continue;
+    }
+    fs.writeFileSync(target, body);
+    lock[cat.key][item.name] = { version: item.version, sha256: item.sha256, path: target };
+    if (current) { updated++; log(`[updated] ${cat.label} ${item.name} ${current.version} → ${item.version}`); }
+    else { added++; log(`[added]   ${cat.label} ${item.name} ${item.version}`); }
+  }
+
+  return { added, updated, skipped, pinned };
+}
+
+// Skills are multi-file: each manifest entry has `files: [{path, sha256}]`.
+// Target for a skill file is ~/.claude/skills/<name>/<rel-path-after-skills/<name>/>.
+async function syncSkills(manifest, lock, cfg, cachePath) {
+  const items = manifest.skills || [];
+  if (items.length === 0) return { added: 0, updated: 0, skipped: 0, pinned: 0 };
+
+  fs.mkdirSync(SKILLS_DIR, { recursive: true });
+  let added = 0, updated = 0, skipped = 0, pinned = 0;
+
+  for (const item of items) {
+    if (item.scope && item.scope !== 'user') continue;
+    const current = lock.skills[item.name];
+    const pin = lock.pins[item.name];
+
+    if (pin && pin !== item.version && !FLAGS.force) {
+      pinned++;
+      log(`[pinned]  skill ${item.name} @ ${pin} (remote ${item.version})`);
+      continue;
+    }
+
+    const skillRoot = path.join(SKILLS_DIR, item.name);
+    // Map manifest paths → relative paths under the skill directory.
+    const fileMap = (item.files || []).map(f => ({
+      manifestPath: f.path,
+      relPath: f.path.replace(new RegExp(`^skills/${item.name}/`), ''),
+      sha256: f.sha256,
+    }));
+
+    const allCached = current && current.files && fileMap.every(f => {
+      const local = current.files[f.relPath];
+      return local === f.sha256 && fs.existsSync(path.join(skillRoot, f.relPath));
+    });
+    if (allCached) { skipped++; continue; }
+
+    const localFiles = {};
+    let failed = false;
+    for (const f of fileMap) {
+      const target = path.join(skillRoot, f.relPath);
+      let body;
+      try { body = await readFromSource(cfg, f.manifestPath, cachePath); }
+      catch (e) {
+        err(`[ahc] failed to read skill file ${f.manifestPath}: ${e.message}`);
+        failed = true; break;
+      }
+      const got = sha256(body);
+      if (got !== f.sha256) {
+        err(`[ahc] hash mismatch for skill ${item.name} :: ${f.relPath} — expected ${f.sha256}, got ${got}`);
+        failed = true; break;
+      }
+      fs.mkdirSync(path.dirname(target), { recursive: true });
+      fs.writeFileSync(target, body);
+      localFiles[f.relPath] = f.sha256;
+    }
+    if (failed) continue;
+
+    lock.skills[item.name] = { version: item.version, files: localFiles };
+    if (current) { updated++; log(`[updated] skill ${item.name} ${current.version} → ${item.version}`); }
+    else { added++; log(`[added]   skill ${item.name} ${item.version} (${fileMap.length} files)`); }
+  }
+
+  return { added, updated, skipped, pinned };
+}
+
+async function cmdSync() {
+  const cfg = loadConfig();
+  const lock = loadLock();
+
+  let cachePath = null;
+  let manifest;
+  try {
+    if (isGitRepo(cfg)) {
+      // `{ cache, source, refused }`: `source`/`refused` viram a linha de aviso
+      // da cascata (T7), que sai mesmo em `--quiet`.
+      const access = gitRefresh(cfg);
+      cachePath = access.cache;
+      reportRefusedSources(access);
+      manifest = JSON.parse(fs.readFileSync(path.join(cachePath, 'manifest.json'), 'utf8'));
+    } else {
+      const raw = await fetchURL(rawURL(cfg, 'manifest.json'));
+      manifest = JSON.parse(raw);
+    }
+  } catch (e) {
+    // Config inválida não é "offline": sai com erro claro mesmo em --quiet,
+    // porque nenhum sync futuro vai funcionar até alguém corrigir o arquivo.
+    if (e instanceof HubConfigError) throw e;
+    err(hubFailureLine(e));
+    // Exit inalterado (§5): o hook `SessionStart` roda com `--quiet` e não pode
+    // derrubar a sessão do dev por causa de um token vencido — os artefatos já
+    // instalados continuam valendo. Sem `--quiet`, a falha é visível: exit 1.
+    process.exit(FLAGS.quiet ? 0 : 1);
+  }
+
+  const totals = { added: 0, updated: 0, removed: 0, skipped: 0, pinned: 0 };
+  for (const cat of CATEGORIES) {
+    const r = await syncCategory(cat, manifest, lock, cfg, cachePath);
+    totals.added += r.added;
+    totals.updated += r.updated;
+    totals.skipped += r.skipped;
+    totals.pinned += r.pinned;
+  }
+  const sr = await syncSkills(manifest, lock, cfg, cachePath);
+  totals.added += sr.added;
+  totals.updated += sr.updated;
+  totals.skipped += sr.skipped;
+  totals.pinned += sr.pinned;
+
+  totals.removed += pruneOrphans(manifest, lock);
+
+  lock.last_sync = new Date().toISOString();
+  lock.manifest_version = manifest.version;
+  saveLock(lock);
+  log(`[ahc] sync ok — added:${totals.added} updated:${totals.updated} removed:${totals.removed} skipped:${totals.skipped} pinned:${totals.pinned}`);
+
+  // Coordenação de sessões: presença + janitor de lock órfão. Vive aqui porque
+  // o hook SessionStart já invoca `ahc sync` em toda sessão — nenhuma config
+  // nova necessária. console.log de propósito (ignora --quiet): num hook
+  // SessionStart o stdout é injetado no contexto da sessão, e o aviso É o
+  // produto. Nada aqui pode quebrar o sync.
+  try {
+    const gitdir = coordGitDir();
+    if (gitdir && !coordOff(gitdir)) {
+      const others = coordRegister(gitdir);
+      const jr = coordJanitor(gitdir);
+      for (const r of jr.removed) console.log(`[ahc] lock órfão removido: ${r}`);
+      for (const w of jr.warnings) console.log(`[ahc] ${w}`);
+      if (others.length) {
+        const o = others[0];
+        console.log(`[ahc] Há outra sessão Claude Code ativa neste diretório (PID ${o.pid}, branch inicial ${o.branch_at_start || '?'}). ` +
+          `Edições e git concorrentes podem se sobrescrever. Pra paralelismo real: ahc worktree <branch>`);
+      }
+    }
+  } catch {}
+}
+
+// Remove o que saiu do manifest. Sem isso um item retirado do hub sobrevive
+// pra sempre na máquina de quem já o tinha — e um command removido continua
+// ativo, não inerte: foi assim que o /goal, retirado por sombrear o slash
+// command nativo de mesmo nome, seguiu sombreando por um mês depois da
+// reversão.
+//
+// Só apaga o que o próprio ahc instalou (está no lock). Arquivo que o dev
+// escreveu à mão em ~/.claude nunca entra no lock e portanto nunca é tocado.
+// Item pinado é preservado: o pin é uma decisão explícita de segurar aquela
+// versão, e o sync não a desfaz sem o dev mandar.
+function pruneOrphans(manifest, lock) {
+  let removed = 0;
+
+  for (const cat of CATEGORIES) {
+    const remote = new Set((manifest[cat.manifestKey] || []).map(it => it.name));
+    for (const name of Object.keys(lock[cat.key] || {})) {
+      if (remote.has(name)) continue;
+      if (lock.pins && lock.pins[name]) {
+        log(`[pinned]  ${cat.label} ${name} saiu do manifest mas está pinado — mantido`);
+        continue;
+      }
+      const entry = lock[cat.key][name];
+      const target = (entry && entry.path) || path.join(cat.dir, `${name}${cat.ext}`);
+      try { fs.rmSync(target, { force: true }); } catch {}
+      delete lock[cat.key][name];
+      removed++;
+      log(`[removed] ${cat.label} ${name}`);
+    }
+  }
+
+  const remoteSkills = new Set((manifest.skills || []).map(it => it.name));
+  for (const name of Object.keys(lock.skills || {})) {
+    if (remoteSkills.has(name)) continue;
+    if (lock.pins && lock.pins[name]) {
+      log(`[pinned]  skill ${name} saiu do manifest mas está pinada — mantida`);
+      continue;
+    }
+    try { fs.rmSync(path.join(SKILLS_DIR, name), { recursive: true, force: true }); } catch {}
+    delete lock.skills[name];
+    removed++;
+    log(`[removed] skill ${name}`);
+  }
+
+  return removed;
+}
+
+async function cmdList() {
+  const cfg = loadConfig();
+  const lock = loadLock();
+  let manifest = null;
+  try {
+    if (isGitRepo(cfg)) {
+      const access = gitRefresh(cfg);
+      reportRefusedSources(access);
+      manifest = JSON.parse(fs.readFileSync(path.join(access.cache, 'manifest.json'), 'utf8'));
+    } else {
+      manifest = JSON.parse(await fetchURL(rawURL(cfg, 'manifest.json')));
+    }
+  } catch (e) {
+    // `list` tolera hub inalcançável (mostra só o local), mas não config quebrada.
+    if (e instanceof HubConfigError) throw e;
+    // Silêncio aqui deixava a coluna `remote:` toda em `-` sem explicar por quê
+    // — inclusive quando o motivo é uma branch inexistente (T6b). A linha sai
+    // em stderr; o exit segue 0, porque o local continua listável.
+    err(hubFailureLine(e));
+  }
+
+  console.log(`repo: ${cfg.repo}@${cfg.branch} (${cfg.channel})`);
+
+  // Optional `--team <bucket>` filter (only meaningful for agents).
+  const teamFilter = (() => {
+    const a = ARGS.find(x => x.startsWith('--team='));
+    if (a) return a.slice('--team='.length).split(',').map(s => s.trim()).filter(Boolean);
+    const i = ARGS.indexOf('--team');
+    if (i !== -1 && ARGS[i + 1]) return ARGS[i + 1].split(',').map(s => s.trim()).filter(Boolean);
+    return null;
+  })();
+
+  function renderRow(name, local, remote, pin) {
+    let status = '  ';
+    if (!local && remote) status = '++';
+    else if (local && remote && local.sha256 !== remote.sha256) status = '↑↑';
+    else if (local && !remote) status = '--';
+    const v = local ? local.version : '-';
+    const r = remote ? remote.version : '-';
+    const pinTag = pin ? ` [pin:${pin}]` : '';
+    return `${status} ${name.padEnd(30)} local:${v.padEnd(8)} remote:${r}${pinTag}`;
+  }
+
+  for (const cat of CATEGORIES) {
+    const remoteItems = manifest ? (manifest[cat.manifestKey] || []) : [];
+    const localItems = lock[cat.key] || {};
+    const names = new Set([...Object.keys(localItems), ...remoteItems.map(i => i.name)]);
+    if (names.size === 0) continue;
+
+    // Group agents by team. Other categories print flat (no team concept yet).
+    if (cat.key === 'agents') {
+      const buckets = new Map(); // team -> [name]
+      for (const name of [...names].sort()) {
+        const remote = remoteItems.find(i => i.name === name);
+        const team = (remote && remote.team) || '(no-team)';
+        if (teamFilter && !teamFilter.includes(team)) continue;
+        if (!buckets.has(team)) buckets.set(team, []);
+        buckets.get(team).push(name);
+      }
+      const total = [...buckets.values()].reduce((n, arr) => n + arr.length, 0);
+      console.log(`\nAGENTS (${total}${teamFilter ? `, filtered by team=${teamFilter.join(',')}` : ''})`);
+      for (const team of [...buckets.keys()].sort()) {
+        const list = buckets.get(team);
+        console.log(`\n  ${team} (${list.length})`);
+        for (const name of list) {
+          const local = localItems[name];
+          const remote = remoteItems.find(i => i.name === name);
+          console.log(`  ${renderRow(name, local, remote, lock.pins[name])}`);
+        }
+      }
+      continue;
+    }
+
+    console.log(`\n${cat.key.toUpperCase()}`);
+    for (const name of [...names].sort()) {
+      const local = localItems[name];
+      const remote = remoteItems.find(i => i.name === name);
+      console.log(renderRow(name, local, remote, lock.pins[name]));
+    }
+  }
+
+  // Skills (multi-file): compare by version + per-file shas.
+  const remoteSkills = manifest ? (manifest.skills || []) : [];
+  const localSkills = lock.skills || {};
+  const skillNames = new Set([...Object.keys(localSkills), ...remoteSkills.map(i => i.name)]);
+  if (skillNames.size > 0) {
+    console.log(`\nSKILLS`);
+    for (const name of [...skillNames].sort()) {
+      const local = localSkills[name];
+      const remote = remoteSkills.find(i => i.name === name);
+      const pin = lock.pins[name];
+      let status = '  ';
+      if (!local && remote) status = '++';
+      else if (local && !remote) status = '--';
+      else if (local && remote) {
+        const drift = (remote.files || []).some(f => {
+          const rel = f.path.replace(new RegExp(`^skills/${name}/`), '');
+          return !local.files || local.files[rel] !== f.sha256;
+        });
+        if (drift) status = '↑↑';
+      }
+      const v = local ? local.version : '-';
+      const r = remote ? remote.version : '-';
+      const pinTag = pin ? ` [pin:${pin}]` : '';
+      const fileCount = remote ? (remote.files || []).length : (local && local.files ? Object.keys(local.files).length : 0);
+      console.log(`${status} ${name.padEnd(30)} local:${v.padEnd(8)} remote:${r}${pinTag}  (${fileCount} files)`);
+    }
+  }
+
+  console.log('\nlegend: ++ new  ↑↑ update available  -- removed remotely');
+}
+
+function cmdPin() {
+  const spec = ARGS[1];
+  if (!spec || !spec.includes('@')) { err('usage: ahc pin <name>@<version>'); process.exit(2); }
+  const [name, version] = spec.split('@');
+  const lock = loadLock();
+  lock.pins[name] = version;
+  saveLock(lock);
+  console.log(`[pinned] ${name} @ ${version}`);
+}
+
+function cmdUnpin() {
+  const name = ARGS[1];
+  if (!name) { err('usage: ahc unpin <name>'); process.exit(2); }
+  const lock = loadLock();
+  delete lock.pins[name];
+  saveLock(lock);
+  console.log(`[unpinned] ${name}`);
+}
+
+// `ahc doctor` — diagnostic checks. Each check pushes one of:
+//   { kind: 'ok'|'warn'|'fail', label, detail?, hint? }
+// Exit code: 1 if any 'fail', 0 otherwise (warns are non-fatal).
+// ---------------------------------------------------------------------------
+// Diagnóstico do acesso ao hub (demanda 001-ahc-pat-auth, T8)
+//
+// O doctor é o único lugar que checa a versão do git: a injeção do header por
+// `GIT_CONFIG_COUNT` só existe a partir do 2.31, e sem isso toda rodada de
+// token vira "acesso recusado" sem explicar o porquê. O hot path do `sync` não
+// gasta um spawn por sessão para descobrir isso.
+// ---------------------------------------------------------------------------
+
+const MIN_GIT_VERSION = [2, 31];
+
+// `git --version` não lê config, mas uma `GIT_CONFIG_COUNT` herdada e
+// malformada faria o próprio git abortar com "bogus count" — e aqui a pergunta
+// é só qual binário está instalado.
+function gitVersionEnv() {
+  const env = { ...process.env, LC_ALL: 'C', LANGUAGE: 'C', GIT_TERMINAL_PROMPT: '0' };
+  for (const key of Object.keys(env)) {
+    if (/^GIT_CONFIG_(COUNT|KEY_\d+|VALUE_\d+)$/.test(key)) delete env[key];
+  }
+  return env;
+}
+
+// `git version 2.39.5 (Apple Git-154)` → { text: '2.39.5', nums: [2, 39, 5] }.
+function readGitVersion() {
+  const out = execFileSync('git', ['--version'], {
+    cwd: os.tmpdir(),
+    env: gitVersionEnv(),
+    stdio: ['ignore', 'pipe', 'pipe'],
+    encoding: 'utf8',
+    timeout: 5000,
+    windowsHide: true,
+  });
+  const m = /(\d+)\.(\d+)(?:\.(\d+))?/.exec(out || '');
+  if (!m) return null;
+  return { text: m[0], nums: [Number(m[1]), Number(m[2]), Number(m[3] || 0)] };
+}
+
+function gitVersionAtLeast(nums, min = MIN_GIT_VERSION) {
+  for (let i = 0; i < min.length; i++) {
+    const have = nums[i] || 0;
+    if (have > min[i]) return true;
+    if (have < min[i]) return false;
+  }
+  return true;
+}
+
+// Dica por origem recusada: cada uma se substitui de um jeito diferente, e uma
+// dica genérica ("rode `gh auth login`") não resolve nenhuma delas.
+const REFUSED_HINTS = {
+  env: 'Atualize ou remova a variável: `unset AHC_GITHUB_TOKEN`',
+  config: 'Informe outro token com `ahc config token=<novo>` ou remova o campo `token`',
+  embutido: 'Token embutido vencido ou revogado: rode de novo o one-liner da wiki, ' +
+    'ou informe um token por AHC_GITHUB_TOKEN / `ahc config token=<novo>`',
+  // A rodada `git` é a última: se ela for recusada, não sobra origem e o caso
+  // vira o ✗ abaixo. A dica existe para não deixar buraco se a ordem mudar.
+  git: 'Guarde a credencial da sua conta da org: `gh auth login && gh auth setup-git`',
+};
+
+// Quando todas as origens caem, `gh auth login` sozinho não é saída: o dev sem
+// credencial git é exatamente quem esta demanda atende. O token vem primeiro.
+const ALL_REFUSED_HINT =
+  'Informe um token válido: `export AHC_GITHUB_TOKEN=<token>` ou `ahc config token=<token>`. ' +
+  'Com conta na org: `gh auth login && gh auth setup-git`';
+
+// T6b: a branch do config não existe no remoto. Não é falha de credencial —
+// trocar de token não muda nada —, então a dica aponta para o nome da branch.
+const NOREF_HINT =
+  'Confira o nome da branch no repo e corrija com `ahc config branch=<branch>`';
+
+// A lista de origens do ✗ usa o nome curto de cada uma (`env`, `config`,
+// `embutido`, `credencial git`); o rótulo longo já aparece nos ⚠.
+function shortSourceLabel(id) { return id === 'git' ? SOURCE_LABELS.git : id; }
+
+async function cmdDoctor() {
+  const checks = [];
+  const pass = (label, detail) => checks.push({ kind: 'ok', label, detail });
+  const warn = (label, detail, hint) => checks.push({ kind: 'warn', label, detail, hint });
+  const fail = (label, detail, hint) => checks.push({ kind: 'fail', label, detail, hint });
+
+  // 1. ahc binary in PATH
+  const ahcBin = process.argv[1] || '(unknown)';
+  if (fs.existsSync(ahcBin)) pass('ahc binary in PATH', ahcBin);
+  else fail('ahc binary location', `not found at ${ahcBin}`, 'Re-run install.sh');
+
+  // 2. SessionStart hook in settings.json
+  const settingsPath = path.join(CLAUDE_DIR, 'settings.json');
+  if (!fs.existsSync(settingsPath)) {
+    warn('SessionStart hook', 'settings.json missing', 'Re-run install.sh to configure auto-sync');
+  } else {
+    const settings = readJSON(settingsPath, null);
+    if (!settings) fail('SessionStart hook', 'settings.json is not valid JSON', `Inspect ${settingsPath}`);
+    else {
+      const hooks = (settings.hooks && settings.hooks.SessionStart) || [];
+      const hasAhc = hooks.some(h => (h.hooks || []).some(c => typeof c.command === 'string' && c.command.includes('ahc sync')));
+      if (hasAhc) pass('SessionStart hook configured', settingsPath);
+      else fail('SessionStart hook', 'no `ahc sync` hook found in settings.json', 'Re-run install.sh — it merges the hook safely');
+    }
+  }
+
+  // 3. Lock file
+  const lockExists = fs.existsSync(LOCK_FILE);
+  if (!lockExists) {
+    warn('lock file', 'not present yet', 'Run `ahc sync` once to create it');
+  } else {
+    const lock = readJSON(LOCK_FILE, null);
+    if (!lock) fail('lock file', '.ahc-lock.json is not valid JSON', `Inspect ${LOCK_FILE} or delete and re-run \`ahc sync\``);
+    else {
+      const a = Object.keys(lock.agents || {}).length;
+      const c = Object.keys(lock.commands || {}).length;
+      const s = Object.keys(lock.skills || {}).length;
+      const n = Object.keys(lock.autonomous || {}).length;
+      const total = a + c + s + n;
+      if (total === 0) warn('lock file', 'empty (no items installed)', 'Run `ahc sync`');
+      else {
+        const mtime = fs.statSync(LOCK_FILE).mtimeMs;
+        const age = humanAge(Date.now() - mtime);
+        pass('lock file valid', `${a} agents · ${c} commands · ${s} skills · ${n} autonomous · last sync ${age} ago`);
+      }
+    }
+  }
+
+  // 4. Config file permission (only matters on Unix; fail-closed if mode has world bits AND token field is set)
+  if (fs.existsSync(CONFIG_FILE)) {
+    const cfg = readJSON(CONFIG_FILE, {});
+    const mode = fs.statSync(CONFIG_FILE).mode & 0o777;
+    const worldOrGroup = (mode & 0o077) !== 0;
+    const hasToken = typeof cfg.token === 'string' && cfg.token.length > 0;
+    if (process.platform !== 'win32' && worldOrGroup && hasToken) {
+      fail('config file permission', `mode ${mode.toString(8).padStart(3, '0')} on ${CONFIG_FILE} (token present)`, `Run \`chmod 600 ${CONFIG_FILE}\``);
+    } else if (process.platform !== 'win32' && worldOrGroup) {
+      warn('config file permission', `mode ${mode.toString(8).padStart(3, '0')} on ${CONFIG_FILE}`, `Run \`chmod 600 ${CONFIG_FILE}\` (preventive, no token currently)`);
+    } else {
+      pass('config file permission', `${process.platform === 'win32' ? 'win32 (skipped)' : `mode ${mode.toString(8).padStart(3, '0')}`}`);
+    }
+  } else {
+    pass('config file permission', '.ahc-config.json not present (defaults in use)');
+  }
+
+  const cfg = loadConfig();
+
+  // 5. Versão do git. Abaixo de 2.31 não existe `GIT_CONFIG_KEY_i`/`VALUE_i`,
+  // então nenhuma origem de token consegue apresentar o header — e a falha
+  // apareceria como "acesso recusado por todas as origens", que manda o dev
+  // trocar um token que está certo.
+  let gitVer = null;
+  try { gitVer = readGitVersion(); } catch { gitVer = null; }
+  if (!gitVer) {
+    warn('git version', 'não foi possível executar `git --version`',
+      'Instale o git 2.31 ou mais novo e confirme que ele está no PATH');
+  } else if (gitVersionAtLeast(gitVer.nums)) {
+    pass('git version', `${gitVer.text} >= ${MIN_GIT_VERSION.join('.')}`);
+  } else {
+    fail('git version', `${gitVer.text} < ${MIN_GIT_VERSION.join('.')} (necessário para autenticar por token)`);
+  }
+
+  // 6. Acesso ao hub — UMA cascata só (§5). O resultado `{cache, source,
+  // refused}` é computado aqui e o check 7 consome o mesmo `cache`: chamar
+  // `gitRefresh` de novo refaria a cascata inteira, apresentando as credenciais
+  // ao remoto duas vezes por `doctor` e podendo até divergir do que este check
+  // acabou de reportar. Fixtures `file://`/`http` não têm cascata (AC-13).
+  let access = null;
+  let accessError = null;
+  if (isGitRepo(cfg)) {
+    // `gitRefresh` valida `repo`/`branch` e só então abre rede — nada daqui
+    // passa por shell.
+    try { access = gitRefresh(cfg); } catch (e) { accessError = e; }
+
+    if (access) {
+      // AC-09: a saída nomeia a origem que autenticou.
+      pass('git auth', `${cfg.repo}@${cfg.branch} reachable via ${sourceLabel(access.source)}`);
+      // AC-10 cenário B: um ⚠ por origem recusada antes da que autenticou, com
+      // a dica própria de cada uma. ⚠ não muda o exit code — o acesso funciona,
+      // e exit 1 aqui deixaria vermelho o doctor de quem tem credencial git
+      // sempre que o embutido fosse revogado (AC-12).
+      for (const id of access.refused) {
+        warn('git auth: origem recusada', sourceLabel(id), REFUSED_HINTS[id] || ALL_REFUSED_HINT);
+      }
+    } else if (accessError instanceof HubConfigError) {
+      // Sem rede nenhuma: `repo`/`branch` do config não passaram na validação.
+      // O valor não é ecoado — ele veio de um arquivo editável à mão.
+      fail('git auth', 'configuração inválida do hub', redact(accessError.message));
+    } else if (accessError instanceof HubAccessError && accessError.kind === 'refused' && !accessError.source) {
+      // AC-10 cenário A: todas as origens disponíveis foram recusadas. A rodada
+      // `git` sem credencial nenhuma é "tentada mas indisponível" — ela está em
+      // `tried` e não em `refused`, e é isso que a lista mostra.
+      const labels = accessError.tried.map((id) => (
+        accessError.refused.includes(id) ? shortSourceLabel(id) : `${shortSourceLabel(id)}: nenhuma configurada`
+      ));
+      fail('git auth', `${cfg.repo}@${cfg.branch}: acesso recusado por todas as origens (${labels.join(', ')})`,
+        ALL_REFUSED_HINT);
+    } else if (accessError instanceof HubAccessError) {
+      // Rede, redirect, 404 sem token, branch inexistente (T6b), não
+      // classificado: a cascata parou na primeira origem e as seguintes nem
+      // chegaram a ser apresentadas.
+      fail('git auth', `${cfg.repo}@${cfg.branch}: ${accessWhat(accessError)}; outras origens não tentadas`,
+        accessError.kind === 'noref' ? NOREF_HINT : undefined);
+    } else {
+      fail('git auth', `${cfg.repo}@${cfg.branch}: ${redact(accessError && accessError.message)}`);
+    }
+  } else {
+    pass('git auth', `local fixture (${cfg.repo}) — skipped`);
+  }
+
+  // 7. CLI up to date — compare local bin/ahc sha to the version in the cache.
+  // No modo git o conteúdo vem do cache que o check 6 acabou de atualizar
+  // (nenhuma cascata nova); fixtures `file://` continuam pelo raw URL.
+  if (fs.existsSync(ahcBin)) {
+    try {
+      let remoteBin;
+      if (isGitRepo(cfg)) {
+        if (!access) throw new Error('hub inalcançável (veja o check `git auth` acima)');
+        const remoteBinPath = path.join(access.cache, 'bin', 'ahc');
+        if (!fs.existsSync(remoteBinPath)) throw new Error('bin/ahc not in cache');
+        remoteBin = fs.readFileSync(remoteBinPath, 'utf8');
+      } else {
+        remoteBin = await fetchURL(rawURL(cfg, 'bin/ahc'));
+      }
+      const localSha = sha256(fs.readFileSync(ahcBin, 'utf8'));
+      const remoteSha = sha256(remoteBin);
+      if (localSha === remoteSha) pass('ahc CLI up to date', `sha ${localSha.slice(0, 12)}…`);
+      else warn('ahc CLI out of date', `local ${localSha.slice(0, 12)}… ≠ remote ${remoteSha.slice(0, 12)}…`, 'Re-run install.sh to upgrade the CLI binary');
+    } catch (e) {
+      warn('ahc CLI version check', `could not compare with remote: ${redact(e.message)}`, 'Re-check git auth (above) or run `ahc sync` once to populate the cache');
+    }
+  } else {
+    warn('ahc CLI version check', 'binary path missing (skipping comparison)');
+  }
+
+  // 8. Session coordination (only meaningful inside a git repo; never mutates)
+  const coordGd = coordGitDir();
+  if (coordGd) {
+    if (coordOff(coordGd)) {
+      warn('session coord', 'desligada neste checkout', 'Religue com `ahc coord on`');
+    } else {
+      const jr = coordJanitor(coordGd, false); // report only — doctor não remove nada
+      if (jr.removed.length || jr.warnings.length) {
+        const first = jr.removed[0] || '';
+        fail('git lock órfão', jr.removed.length
+          ? `${jr.removed.length} lock(s) provadamente órfão(s)`
+          : jr.warnings[0],
+          jr.removed.length ? `Remova com: rm ${first}  (ou rode \`ahc coord janitor\`)` : 'Confira com `ahc coord janitor`');
+      } else {
+        pass('git locks', 'nenhum lock órfão');
+      }
+      const live = coordListSessions(coordGd).filter(sessionAlive);
+      if (live.length > 1) {
+        warn('session coord', `${live.length} sessões vivas neste checkout`,
+          'Escritas concorrentes podem colidir — isole com `ahc worktree <branch>`');
+      } else {
+        pass('session coord', `${live.length} sessão viva neste checkout`);
+      }
+    }
+  }
+
+  // Render
+  const SYM = { ok: '✓', warn: '⚠', fail: '✗' };
+  console.log('ahc doctor — system health check\n');
+  for (const c of checks) {
+    const detail = c.detail ? ` ${c.kind === 'ok' ? '(' + c.detail + ')' : '— ' + c.detail}` : '';
+    console.log(`${SYM[c.kind]} ${c.label}${detail}`);
+    if (c.hint && c.kind !== 'ok') console.log(`  → ${c.hint}`);
+  }
+  const counts = { ok: 0, warn: 0, fail: 0 };
+  for (const c of checks) counts[c.kind]++;
+  console.log(`\nSummary: ${counts.ok} ${SYM.ok} · ${counts.warn} ${SYM.warn} · ${counts.fail} ${SYM.fail}`);
+  process.exit(counts.fail > 0 ? 1 : 0);
+}
+
+function humanAge(ms) {
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.round(h / 24);
+  return `${d}d`;
+}
+
+// Quantos caracteres do fim do token continuam visíveis. 4 é o suficiente para
+// o dev conferir "é esse mesmo?" sem que a saída sirva para usar a credencial.
+const MASK_TAIL = 4;
+
+// Mascaramento de apresentação do token: prefixo + os 4 últimos caracteres
+// (`github_pat_TESTONLY…0123abcd` → `github_pat_…abcd`). O exemplo leva reticências
+// de propósito: um literal `github_pat_` seguido de 20+ alfanuméricos dispara o
+// `--check` do make-mirror (C12), e um exemplo de doc não pode gastar esse alarme.
+// segue com o valor inteiro; isto vale só para o que sai em stdout/stderr.
+// Porquê: `ahc config` é colado em issue, print e log de CI o tempo todo, e a
+// listagem despejava o PAT inteiro. O prefixo (`github_pat_`, `ghp_`, …) não é
+// segredo e ajuda a identificar o tipo de credencial, então fica visível.
+function maskToken(v) {
+  // Chave ausente ou valor não-string: nada a mascarar, nada a inventar.
+  if (typeof v !== 'string') return v;
+  // '' é "origem ausente" no contrato desta demanda — não há segredo aqui.
+  if (v === '') return v;
+  const m = /^(?:[A-Za-z0-9]+_)+/.exec(v);
+  const prefix = m ? m[0] : '';
+  const rest = v.slice(prefix.length);
+  // Só mostramos a cauda quando sobra pelo menos o mesmo tanto escondido. Abaixo
+  // disso o "mascarado" entregaria o valor quase inteiro, então some com tudo:
+  // na dúvida mascara-se a mais, nunca a menos.
+  if (rest.length < MASK_TAIL * 2) return '…';
+  return `${prefix}…${rest.slice(-MASK_TAIL)}`;
+}
+
+// Cópia da config para exibição: só o `token` muda; `repo`, `branch`, `channel`
+// e quaisquer chaves extras saem inalterados.
+function maskConfigForDisplay(cfg) {
+  if (!Object.prototype.hasOwnProperty.call(cfg, 'token')) return cfg;
+  return { ...cfg, token: maskToken(cfg.token) };
+}
+
+function cmdConfig() {
+  const kv = ARGS[1];
+  if (!kv) { console.log(JSON.stringify(maskConfigForDisplay(loadConfig()), null, 2)); return; }
+  // Corta só no PRIMEIRO '=': o valor pode conter '=' (PAT, base64, querystring).
+  // `split('=')` truncava `token=abc=def==` em `abc` e derrubava o sync de quem
+  // aplicou o override. Índice 0 = chave vazia, -1 = sem '='; ambos são uso inválido.
+  const eq = kv.indexOf('=');
+  if (eq <= 0) { err('usage: ahc config <key>=<value>'); process.exit(2); }
+  const k = kv.slice(0, eq);
+  const v = kv.slice(eq + 1);
+  const cfg = loadConfig();
+  cfg[k] = v;
+  writeConfigFile(cfg);
+  // A confirmação também é saída: o token gravado nunca aparece inteiro aqui.
+  console.log(`[config] ${k} = ${k === 'token' ? maskToken(v) : v}`);
+}
+
+// ---------------------------------------------------------------------------
+// Coordenação de sessões — várias sessões Claude Code no MESMO checkout.
+//
+// Filosofia: nada nunca bloqueia. O git já serializa o trecho crítico via
+// index.lock; o dano real observado foi (a) lock órfão que travou o repo por
+// dias e (b) sessões sem consciência umas das outras. O janitor remove só o
+// que é provadamente órfão; a presença dá consciência; o guard avisa antes de
+// git de escrita. Kill switch: AHC_COORD=off ou `ahc coord off`.
+//
+// Estado vive em <gitdir>/ahc-sessions/ — por worktree, então quem isola com
+// `ahc worktree` ganha silêncio automático.
+// ---------------------------------------------------------------------------
+// git segura index.lock por ms–segundos; 30min é 15–30x o pior caso legítimo.
+const LOCK_MIN_AGE_MS = 30 * 60 * 1000;
+// lock não-vazio pode ser crash no meio da escrita do índice; 24h tira a dúvida.
+const LOCK_SURE_AGE_MS = 24 * 60 * 60 * 1000;
+// vivo = kill(pid,0) ok E beat < 12h — o teto cobre reuso de PID; errar aqui
+// custa um aviso a mais, nunca um bloqueio.
+const BEAT_STALE_MS = 12 * 60 * 60 * 1000;
+const DEAD_COLLECT_MS = 24 * 60 * 60 * 1000;
+// um turno agêntico dispara 5–20 comandos git; avisar em todos vira ruído.
+const WARN_DEDUPE_MS = 15 * 60 * 1000;
+
+function coordGitDir(cwd) {
+  try {
+    const out = execSync('git rev-parse --git-dir', {
+      cwd: cwd || process.cwd(), stdio: ['ignore', 'pipe', 'pipe'],
+    }).toString().trim();
+    return path.resolve(cwd || process.cwd(), out);
+  } catch { return null; }
+}
+function coordStateDir(gitdir) { return path.join(gitdir, 'ahc-sessions'); }
+function coordOff(gitdir) {
+  return process.env.AHC_COORD === 'off' ||
+    fs.existsSync(path.join(coordStateDir(gitdir), 'off'));
+}
+// O PID da sessão é o pai do processo do hook/CLI.
+function coordSelfPid() { return process.ppid || process.pid; }
+function coordPresencePath(gitdir) {
+  return path.join(coordStateDir(gitdir), `${coordSelfPid()}.json`);
+}
+
+function gitLockCandidates(gitdir) {
+  const out = [];
+  for (const rel of ['index.lock', 'HEAD.lock', 'config.lock']) {
+    const p = path.join(gitdir, rel);
+    if (fs.existsSync(p)) out.push(p);
+  }
+  const refs = path.join(gitdir, 'refs');
+  if (fs.existsSync(refs)) {
+    (function walk(d) {
+      for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+        const full = path.join(d, e.name);
+        if (e.isDirectory()) walk(full);
+        else if (e.name.endsWith('.lock')) out.push(full);
+      }
+    })(refs);
+  }
+  return out;
+}
+
+// git mantém o fd do lock aberto enquanto o detém — lsof acha o dono. Sem
+// lsof, fallback conservador: qualquer processo git na máquina veta a remoção
+// (falso negativo aceitável; falso positivo aqui corrompe operação em curso).
+function lockHeldByLiveProcess(lockPath) {
+  let hasLsof = false;
+  try { hasLsof = execSync('command -v lsof || true').toString().trim().length > 0; } catch {}
+  if (hasLsof) {
+    try {
+      return execSync(`lsof -t ${JSON.stringify(lockPath)} 2>/dev/null || true`)
+        .toString().trim().length > 0;
+    } catch { return true; }
+  }
+  try {
+    const ps = execSync('ps -eo comm= 2>/dev/null || true').toString();
+    return ps.split('\n').some(l => { const c = l.trim(); return c === 'git' || c.endsWith('/git'); });
+  } catch { return true; }
+}
+
+// apply=false: só reporta (pro doctor, que não deve mutar nada).
+// NUNCA toca MERGE_HEAD / rebase-merge / CHERRY_PICK_HEAD — estado recuperável
+// de operação interrompida, cheio de intenção humana. Só arquivos *.lock.
+function coordJanitor(gitdir, apply = true) {
+  const removed = [], warnings = [];
+  for (const lock of gitLockCandidates(gitdir)) {
+    let st; try { st = fs.statSync(lock); } catch { continue; }
+    const age = Date.now() - st.mtimeMs;
+    if (age < LOCK_MIN_AGE_MS) continue;
+    if (lockHeldByLiveProcess(lock)) continue;
+    const disp = path.relative(process.cwd(), lock) || lock;
+    if (st.size === 0 || age >= LOCK_SURE_AGE_MS) {
+      if (apply) { try { fs.rmSync(lock, { force: true }); } catch { continue; } }
+      removed.push(disp);
+    } else {
+      warnings.push(`${disp} existe há ${humanAge(age)}, sem processo git vivo (${st.size} bytes). ` +
+        `Provável lock órfão. Verifique e remova: rm ${disp}`);
+    }
+  }
+  return { removed, warnings };
+}
+
+function coordListSessions(gitdir) {
+  const dir = coordStateDir(gitdir);
+  if (!fs.existsSync(dir)) return [];
+  const out = [];
+  for (const f of fs.readdirSync(dir)) {
+    if (!f.endsWith('.json')) continue;
+    const p = path.join(dir, f);
+    const e = readJSON(p, null);
+    if (!e || !e.pid) { try { fs.rmSync(p, { force: true }); } catch {} continue; }
+    out.push({ file: p, ...e });
+  }
+  return out;
+}
+function pidAlive(pid) {
+  try { process.kill(pid, 0); return true; }
+  catch (e) { return e.code === 'EPERM'; }
+}
+function sessionAlive(e) {
+  const beat = Date.parse(e.last_beat || e.started_at || 0) || 0;
+  return pidAlive(e.pid) && (Date.now() - beat) < BEAT_STALE_MS;
+}
+// A coleta é feita pelos vivos, não pelo moribundo: kill -9 não passa pelo
+// hook Stop, então sessão morta some no primeiro comando da próxima sessão.
+function coordCollectDead(gitdir) {
+  for (const e of coordListSessions(gitdir)) {
+    const beat = Date.parse(e.last_beat || e.started_at || 0) || 0;
+    if (!pidAlive(e.pid) || (Date.now() - beat) > DEAD_COLLECT_MS) {
+      try { fs.rmSync(e.file, { force: true }); } catch {}
+    }
+  }
+}
+function coordWritePresence(gitdir, entry) {
+  const p = coordPresencePath(gitdir);
+  const tmp = p + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(entry, null, 2) + '\n');
+  fs.renameSync(tmp, p);
+}
+function coordRegister(gitdir) {
+  fs.mkdirSync(coordStateDir(gitdir), { recursive: true });
+  coordCollectDead(gitdir);
+  let branch = '';
+  try {
+    branch = execSync('git rev-parse --abbrev-ref HEAD', { stdio: ['ignore', 'pipe', 'pipe'] })
+      .toString().trim();
+  } catch {}
+  const existing = readJSON(coordPresencePath(gitdir), null);
+  const now = new Date().toISOString();
+  const entry = existing && existing.pid === coordSelfPid()
+    ? { ...existing, last_beat: now }
+    : { pid: coordSelfPid(), started_at: now, last_beat: now, branch_at_start: branch, warned: {} };
+  coordWritePresence(gitdir, entry);
+  return coordListSessions(gitdir).filter(e => e.pid !== coordSelfPid() && sessionAlive(e));
+}
+function coordBeat(gitdir) {
+  const e = readJSON(coordPresencePath(gitdir), null);
+  if (!e) { coordRegister(gitdir); return readJSON(coordPresencePath(gitdir), null); }
+  e.last_beat = new Date().toISOString();
+  coordWritePresence(gitdir, e);
+  return e;
+}
+
+// Comandos que mudam o chão da outra sessão vs. escrita comum de índice.
+// Não reconhecido => leitura: em dúvida, não interfere.
+const GIT_HEAVY = new Set(['checkout', 'switch', 'reset', 'rebase', 'merge', 'pull', 'clean']);
+const GIT_WRITE = new Set(['add', 'rm', 'mv', 'restore', 'commit', 'stash', 'apply', 'am', 'cherry-pick', 'revert', 'submodule']);
+function classifyGit(command) {
+  const m = /(?:^|[;&|(\s])git\s+([a-z][a-z-]*)/.exec(String(command || ''));
+  if (!m) return null;
+  if (GIT_HEAVY.has(m[1])) return 'heavy';
+  if (GIT_WRITE.has(m[1])) return 'write';
+  return 'read';
+}
+
+// PreToolUse guard: heartbeat + janitor no caminho quente + aviso deduplicado.
+// Sai SEMPRE com 0 — o comando executa; a informação vai pro contexto.
+function cmdCoordGuard(gitdir) {
+  let command = ARGS[2] || '';
+  if (!command) {
+    try {
+      const j = JSON.parse(fs.readFileSync(0, 'utf8'));
+      command = (j.tool_input && j.tool_input.command) || '';
+    } catch {}
+  }
+  const self = coordBeat(gitdir);
+  const cls = classifyGit(command);
+  if (!cls || cls === 'read') return;
+  const jr = coordJanitor(gitdir);
+  for (const r of jr.removed) console.log(`[ahc] lock órfão removido: ${r}`);
+  for (const w of jr.warnings) console.log(`[ahc] ${w}`);
+  const others = coordListSessions(gitdir).filter(e => e.pid !== coordSelfPid() && sessionAlive(e));
+  if (!others.length) return;
+  const e = self || { pid: coordSelfPid(), warned: {} };
+  e.warned = e.warned || {};
+  const last = Date.parse(e.warned[cls] || 0) || 0;
+  if (Date.now() - last < WARN_DEDUPE_MS) return;
+  e.warned[cls] = new Date().toISOString();
+  try { coordWritePresence(gitdir, e); } catch {}
+  const o = others[0];
+  if (cls === 'heavy') {
+    console.log(`[ahc] atenção: outra sessão Claude Code ativa neste diretório (PID ${o.pid}). ` +
+      `Este comando muda o working tree que ela está usando agora. Pra isolar: ahc worktree <branch>`);
+  } else {
+    console.log(`[ahc] outra sessão Claude Code ativa neste diretório (PID ${o.pid}). ` +
+      `Escritas de git concorrentes podem colidir; combine quem commita, ou isole com: ahc worktree <branch>`);
+  }
+}
+
+function cmdCoord() {
+  const sub = ARGS[1] || 'status';
+  const gitdir = coordGitDir();
+  if (!gitdir) {
+    if (sub === 'status') console.log('não é um repositório git');
+    return;
+  }
+  if (sub === 'on') {
+    try { fs.rmSync(path.join(coordStateDir(gitdir), 'off'), { force: true }); } catch {}
+    console.log('[coord] ligado');
+    return;
+  }
+  if (sub === 'off') {
+    fs.mkdirSync(coordStateDir(gitdir), { recursive: true });
+    fs.writeFileSync(path.join(coordStateDir(gitdir), 'off'), '');
+    console.log('[coord] desligado — religue com `ahc coord on`');
+    return;
+  }
+  if (sub === 'status') {
+    const live = coordListSessions(gitdir).filter(sessionAlive);
+    console.log(`coord: ${coordOff(gitdir) ? 'OFF' : 'on'} · ${live.length} sessão(ões) viva(s) neste checkout`);
+    for (const s of live) {
+      console.log(`  pid ${s.pid} · desde ${s.started_at} · branch inicial ${s.branch_at_start || '?'}` +
+        (s.pid === coordSelfPid() ? ' · (esta)' : ''));
+    }
+    return;
+  }
+  if (coordOff(gitdir)) return; // kill switch: sai em silêncio, exit 0
+  if (sub === 'register') {
+    const others = coordRegister(gitdir);
+    const jr = coordJanitor(gitdir);
+    for (const r of jr.removed) console.log(`[ahc] lock órfão removido: ${r}`);
+    for (const w of jr.warnings) console.log(`[ahc] ${w}`);
+    if (others.length) {
+      const o = others[0];
+      console.log(`[ahc] Há outra sessão Claude Code ativa neste diretório (PID ${o.pid}, branch inicial ${o.branch_at_start || '?'}). ` +
+        `Edições e git concorrentes podem se sobrescrever. Pra paralelismo real: ahc worktree <branch>`);
+    }
+    return;
+  }
+  if (sub === 'beat') { coordBeat(gitdir); return; }
+  if (sub === 'guard') { cmdCoordGuard(gitdir); return; }
+  if (sub === 'janitor') {
+    const jr = coordJanitor(gitdir);
+    for (const r of jr.removed) console.log(`[removed] ${r}`);
+    for (const w of jr.warnings) console.log(`[warn] ${w}`);
+    if (!jr.removed.length && !jr.warnings.length) console.log('nenhum lock suspeito');
+    return;
+  }
+  err(`unknown subcommand: coord ${sub}`);
+  err('usage: ahc coord [status|register|beat|guard|janitor|on|off]');
+  process.exit(1);
+}
+
+// Caminho pavimentado pro paralelismo real: cada frente no próprio worktree.
+// A presença é por gitdir de worktree, então quem migra para de receber aviso.
+function cmdWorktree() {
+  const branch = ARGS[1];
+  if (!branch) { err('usage: ahc worktree <branch>'); process.exit(2); }
+  let root;
+  try {
+    root = execSync('git rev-parse --show-toplevel', { stdio: ['ignore', 'pipe', 'pipe'] })
+      .toString().trim();
+  } catch { err('[ahc] não é um repositório git'); process.exit(1); }
+  const target = path.join(path.dirname(root), `${path.basename(root)}.wt`, branch);
+  if (fs.existsSync(target)) { err(`[ahc] já existe: ${target}`); process.exit(1); }
+  let exists = false;
+  try {
+    execFileSync('git', ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`],
+      { cwd: root, stdio: 'ignore' });
+    exists = true;
+  } catch {}
+  const args = exists
+    ? ['worktree', 'add', target, branch]
+    : ['worktree', 'add', '-b', branch, target];
+  execFileSync('git', args, { cwd: root, stdio: FLAGS.quiet ? 'pipe' : 'inherit' });
+  // Ambiente não-versionado óbvio acompanha — sem ele a worktree nasce "quebrada".
+  for (const rel of ['.env', '.claude/settings.local.json']) {
+    const src = path.join(root, rel);
+    if (!fs.existsSync(src)) continue;
+    const dst = path.join(target, rel);
+    fs.mkdirSync(path.dirname(dst), { recursive: true });
+    fs.copyFileSync(src, dst);
+    console.log(`[copiado] ${rel}`);
+  }
+  console.log(`\nWorktree pronta: ${target}`);
+  console.log(`Abra a nova sessão lá:\n  cd ${target} && claude`);
+}
+
+// `ahc autonomous list` — answers "what is running unattended right now?".
+// Reads the installed specs rather than the API: no auth needed, works offline,
+// and the answer is the same one that went through PR review.
+function cmdAutonomous() {
+  const sub = ARGS[1] || 'list';
+  if (sub !== 'list') {
+    err(`unknown subcommand: autonomous ${sub}`);
+    err('usage: ahc autonomous list');
+    process.exit(1);
+  }
+
+  if (!fs.existsSync(AUTONOMOUS_DIR)) {
+    console.log('no autonomous agents installed — run `ahc sync`');
+    return;
+  }
+  const files = fs.readdirSync(AUTONOMOUS_DIR).filter(f => f.endsWith('.md')).sort();
+  if (!files.length) {
+    console.log('no autonomous agents installed — run `ahc sync`');
+    return;
+  }
+
+  console.log(`${files.length} autonomous agent(s) in ${AUTONOMOUS_DIR}\n`);
+  let armed = 0;
+  for (const file of files) {
+    const text = fs.readFileSync(path.join(AUTONOMOUS_DIR, file), 'utf8');
+    const fm = /^---\s*\n([\s\S]*?)\n---/.exec(text);
+    const field = (k) => {
+      if (!fm) return '';
+      const m = fm[1].match(new RegExp(`^${k}:\\s*(.+)$`, 'm'));
+      return m ? m[1].trim() : '';
+    };
+    const name = file.replace(/\.md$/, '');
+    const routineId = field('routine_id');
+    const state = routineId ? 'armado ' : 'so spec';
+    if (routineId) armed++;
+    const mode = field('mode') || '?';
+    const schedule = field('schedule') || '?';
+    console.log(`  ${state}  ${name.padEnd(24)} ${mode.padEnd(10)} cron(UTC): ${schedule}`);
+    if (routineId) console.log(`            https://claude.ai/code/routines/${routineId}`);
+  }
+  console.log(`\n${armed} armado(s), ${files.length - armed} so especificacao.`);
+  console.log('Desarmar: desabilite a routine em https://claude.ai/code/routines');
+}
+
+function help() {
+  console.log(`ahc — agents-hub-claude
+
+commands:
+  sync [--quiet] [--timeout=N] [--force]   fetch manifest and update all categories
+  list [--team=<a,b,...>]                  show local vs remote state; agents grouped by team
+  autonomous list                          show autonomous agents and which are armed
+  coord [status|janitor|on|off]            session coordination for shared checkouts
+  worktree <branch>                        isolate a work stream in its own git worktree
+  pin <name>@<version>                     pin an item version (agent or command)
+  unpin <name>                             remove pin
+  config [key=value]                       show or set config (repo, branch, channel, token)
+  doctor                                   diagnose PATH, hook, auth, lock, perms, CLI freshness
+  help                                     this message
+
+files:
+  ~/.claude/agents/                        where agents are installed
+  ~/.claude/commands/                      where commands are installed
+  ~/.claude/skills/                        where skills are installed (multi-file per skill)
+  ~/.claude/autonomous/                    autonomous agent specs (visibility; not read by Claude Code)
+  ~/.claude/.ahc-lock.json                 local lock
+  ~/.claude/.ahc-config.json               local config
+`);
+}
+
+// Quando o arquivo é `require`d em vez de executado, ele não roda comando
+// nenhum: expõe só as funções puras que a suíte cobre por teste unitário.
+// A classificação da falha (C4) é o caso que motiva isto — as tabelas de
+// stderr do git são difíceis de provocar de ponta a ponta (locale traduzido,
+// linha `remote:` antes de um erro de conexão, texto não reconhecido) e o
+// teste de integração só exercita um punhado delas.
+if (require.main !== module) {
+  module.exports = {
+    HubConfigError,
+    HubAccessError,
+    SOURCE_LABELS,
+    sourceLabel,
+    classifyGitFailure,
+    accessWhat,
+    credentialSources,
+    tokenConfigEntries,
+    redact,
+  };
+} else {
+  (async () => {
+    const cmd = ARGS[0] || 'help';
+    try {
+      if (cmd === 'sync') await cmdSync();
+      else if (cmd === 'list') await cmdList();
+      else if (cmd === 'autonomous') cmdAutonomous();
+      else if (cmd === 'coord') cmdCoord();
+      else if (cmd === 'worktree' || cmd === 'wt') cmdWorktree();
+      else if (cmd === 'pin') cmdPin();
+      else if (cmd === 'unpin') cmdUnpin();
+      else if (cmd === 'config') cmdConfig();
+      else if (cmd === 'doctor') await cmdDoctor();
+      else help();
+    } catch (e) {
+      err(`[ahc] ${e.message}`);
+      process.exit(1);
+    }
+  })();
+}
