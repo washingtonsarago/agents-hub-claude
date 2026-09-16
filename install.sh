@@ -509,6 +509,114 @@ try {
 '
 }
 
+# ---------------------------------------------------------------------------
+# Node: o instalador e o CLI dependem dele (config, base64, hook, `bin/ahc`).
+# Em vez de exigir que o dev instale por conta — que era o motivo real de
+# abandono na máquina nova, justamente o público desta demanda — baixamos um
+# Node oficial isolado em ~/.claude/.ahc-node. Sem sudo, sem gerenciador de
+# pacote, e sem competir com nvm/asdf de quem já tem: o PATH do dev não muda,
+# só o desta execução, e o CLI instalado aponta para esse binário por wrapper.
+# ---------------------------------------------------------------------------
+NODE_VERSION="v24.21.0"   # LTS "Krypton"
+NODE_MIN_MAJOR=18
+
+# Major do node do PATH, ou vazio se não houver node utilizável.
+node_major_or_empty() {
+  command -v node >/dev/null 2>&1 || return 0
+  node -p 'process.versions.node.split(".")[0]' 2>/dev/null || true
+}
+
+# "darwin-arm64" | "linux-x64" | "win-x64" ... ; vazio se não suportado.
+ahc_node_platform() {
+  os=''; arch=''
+  case "$(uname -s 2>/dev/null)" in
+    Darwin) os=darwin ;;
+    Linux)  os=linux ;;
+    MINGW*|MSYS*|CYGWIN*|Windows_NT) os=win ;;
+    *) return 1 ;;
+  esac
+  case "$(uname -m 2>/dev/null)" in
+    x86_64|amd64) arch=x64 ;;
+    arm64|aarch64) arch=arm64 ;;
+    *) return 1 ;;
+  esac
+  printf '%s-%s' "$os" "$arch"
+}
+
+ahc_fetch() { # url destino
+  if command -v curl >/dev/null 2>&1; then curl -fsSL "$1" -o "$2"
+  elif command -v wget >/dev/null 2>&1; then wget -qO "$2" "$1"
+  else return 1; fi
+}
+
+ahc_sha256() { # arquivo -> hash
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | awk '{print $1}'
+  else printf ''; fi
+}
+
+# Baixa, confere o sha256 oficial e extrai. Ecoa o caminho do binário no stdout.
+ahc_install_node() {
+  plat="$(ahc_node_platform)" || { echo "[ahc] ERRO: plataforma não suportada para baixar o Node ($(uname -s 2>/dev/null) $(uname -m 2>/dev/null)). Instale o Node $NODE_MIN_MAJOR+ manualmente: https://nodejs.org/" >&2; return 1; }
+  case "$plat" in
+    win-*) pkg="node-${NODE_VERSION}-${plat}.zip" ;;
+    *)     pkg="node-${NODE_VERSION}-${plat}.tar.gz" ;;
+  esac
+  base="https://nodejs.org/dist/${NODE_VERSION}"
+  dest="$CLAUDE_DIR/.ahc-node"
+  tmp="$(mktemp -d)"
+
+  echo "[ahc] node não encontrado — baixando Node ${NODE_VERSION} (${plat}) para $dest" >&2
+  ahc_fetch "$base/$pkg" "$tmp/$pkg" || { echo "[ahc] ERRO: falha ao baixar $base/$pkg" >&2; rm -rf "$tmp"; return 1; }
+
+  # Integridade: o SHASUMS256.txt é publicado pelo projeto Node no mesmo diretório.
+  if ahc_fetch "$base/SHASUMS256.txt" "$tmp/SHASUMS256.txt" 2>/dev/null; then
+    expected="$(grep " $pkg\$" "$tmp/SHASUMS256.txt" 2>/dev/null | awk '{print $1}')"
+    actual="$(ahc_sha256 "$tmp/$pkg")"
+    if [ -n "$expected" ] && [ -n "$actual" ] && [ "$expected" != "$actual" ]; then
+      echo "[ahc] ERRO: sha256 do Node não confere — download corrompido ou adulterado. Nada foi instalado." >&2
+      rm -rf "$tmp"; return 1
+    fi
+    [ -z "$actual" ] && echo "[ahc] aviso: sem sha256sum/shasum nesta máquina; integridade do Node não verificada." >&2
+  else
+    echo "[ahc] aviso: SHASUMS256.txt indisponível; integridade do Node não verificada." >&2
+  fi
+
+  rm -rf "$dest"; mkdir -p "$dest"
+  case "$pkg" in
+    *.tar.gz)
+      tar -xzf "$tmp/$pkg" -C "$dest" --strip-components=1 || { echo "[ahc] ERRO: falha ao extrair o Node." >&2; rm -rf "$tmp" "$dest"; return 1; } ;;
+    *.zip)
+      # Git Bash raramente tem `unzip`; o bsdtar do Windows e o PowerShell sempre estão lá.
+      if command -v unzip >/dev/null 2>&1; then unzip -q "$tmp/$pkg" -d "$tmp/x"
+      elif [ -x /c/Windows/System32/tar.exe ]; then mkdir -p "$tmp/x" && /c/Windows/System32/tar.exe -xf "$(cygpath -w "$tmp/$pkg" 2>/dev/null || echo "$tmp/$pkg")" -C "$(cygpath -w "$tmp/x" 2>/dev/null || echo "$tmp/x")"
+      elif command -v powershell >/dev/null 2>&1; then powershell -NoProfile -Command "Expand-Archive -Force -Path '$(cygpath -w "$tmp/$pkg" 2>/dev/null || echo "$tmp/$pkg")' -DestinationPath '$(cygpath -w "$tmp/x" 2>/dev/null || echo "$tmp/x")'" >/dev/null
+      else echo "[ahc] ERRO: sem unzip, tar do Windows ou PowerShell para extrair o Node." >&2; rm -rf "$tmp" "$dest"; return 1; fi
+      inner="$(find "$tmp/x" -maxdepth 1 -mindepth 1 -type d | head -1)"
+      [ -n "$inner" ] || { echo "[ahc] ERRO: zip do Node em formato inesperado." >&2; rm -rf "$tmp" "$dest"; return 1; }
+      (cd "$inner" && tar -cf - .) | (cd "$dest" && tar -xf -) ;;
+  esac
+  rm -rf "$tmp"
+
+  if   [ -x "$dest/bin/node" ]; then printf '%s' "$dest/bin/node"
+  elif [ -x "$dest/node.exe" ]; then printf '%s' "$dest/node.exe"
+  elif [ -f "$dest/node.exe" ]; then printf '%s' "$dest/node.exe"
+  else echo "[ahc] ERRO: Node extraído mas o binário não foi encontrado em $dest." >&2; return 1; fi
+}
+
+# Garante um node utilizável no PATH desta execução.
+# Define AHC_NODE_BIN quando usou um Node próprio (o CLI vira wrapper).
+ensure_node() {
+  major="$(node_major_or_empty)"
+  if [ -n "$major" ] && [ "$major" -ge "$NODE_MIN_MAJOR" ] 2>/dev/null; then
+    return 0
+  fi
+  [ -n "$major" ] && echo "[ahc] node $(node -v 2>/dev/null) é anterior ao mínimo (v${NODE_MIN_MAJOR})" >&2
+  AHC_NODE_BIN="$(ahc_install_node)" || return 1
+  PATH="$(dirname "$AHC_NODE_BIN"):$PATH"; export PATH
+  echo "[ahc] usando Node $("$AHC_NODE_BIN" -v 2>/dev/null) de $(dirname "$AHC_NODE_BIN")" >&2
+}
+
 main() {
   REPO="${AHC_REPO:-washingtonsarago/agents-hub-claude}"
   BRANCH="${AHC_BRANCH:-main}"
@@ -524,7 +632,8 @@ main() {
 
   echo "[ahc] installing from $REPO@$BRANCH"
 
-  command -v node >/dev/null 2>&1 || { echo "[ahc] node is required" >&2; exit 1; }
+  # Node: usa o do PATH se servir; senão baixa um isolado (ver ensure_node).
+  ensure_node || return 1
   command -v git  >/dev/null 2>&1 || { echo "[ahc] git is required"  >&2; exit 1; }
 
   # Preflight de versão do git antes de qualquer escrita: falhar aqui não deixa
@@ -575,9 +684,19 @@ main() {
     echo "[ahc] aviso: hub autenticado via $(source_label "$HUB_SOURCE"); origem(ns) recusada(s): $labels. Rode \`ahc doctor\`."
   fi
 
-  # Install the CLI from the cache
-  cp "$CACHE/bin/ahc" "$BIN_DIR/ahc"
-  chmod +x "$BIN_DIR/ahc"
+  # Install the CLI from the cache.
+  # Com Node próprio, o shebang `#!/usr/bin/env node` não resolve (o Node não
+  # está no PATH do dev, só no desta execução). Então o que vai para o PATH é um
+  # wrapper que chama o binário por caminho absoluto — é o que faz o hook
+  # SessionStart continuar funcionando em toda sessão futura.
+  if [ -n "${AHC_NODE_BIN:-}" ]; then
+    cp "$CACHE/bin/ahc" "$BIN_DIR/ahc.js"
+    printf '#!/bin/sh\nexec "%s" "%s" "$@"\n' "$AHC_NODE_BIN" "$BIN_DIR/ahc.js" > "$BIN_DIR/ahc"
+    chmod +x "$BIN_DIR/ahc" "$BIN_DIR/ahc.js"
+  else
+    cp "$CACHE/bin/ahc" "$BIN_DIR/ahc"
+    chmod +x "$BIN_DIR/ahc"
+  fi
   echo "[ahc] installed $BIN_DIR/ahc"
 
   # PATH check
