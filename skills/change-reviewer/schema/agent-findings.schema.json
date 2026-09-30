@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "change-reviewer/agent-findings/v1",
+  "title": "change-reviewer agent findings",
+  "description": "What the change-reviewer agent hands back to `gate.js finalize`. The agent judges; it never decides the exit code. Anything that fails this schema is rejected and the gate is inconclusive.",
+  "type": "object",
+  "required": ["schemaVersion", "findings"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "findings": { "type": "array", "items": { "$ref": "gate-result.schema.json#/$defs/finding" } },
+    "positives": { "type": "array", "items": { "type": "string" }, "description": "What is good in the diff. Rendered when non-empty." },
+    "declaredLimitations": { "type": "array", "items": { "type": "string" }, "description": "Limitations the diff declares (data the model does not support, deferred behaviour). The honesty rule blocks inference that is NOT declared here and in the PR." },
+    "contextObservations": { "type": "array", "items": { "type": "string" }, "description": "Conventions the agent extracted from CLAUDE.md prose and applied as judgement context. Informational; never changes the rule set." }
+  }
+}

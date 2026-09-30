@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "name": "regulated",
+  "version": "1.0.0",
+  "locale": "en",
+  "_comment": "Example profile for a team in a regulated domain (traceability, audit trail, acceptance criteria as input to the judgement). Copy it, rename it, and keep everything team-specific here: the core knows no organisation, tracker key or stack. If something your team needs does not fit this format, the core is wrong; open an issue instead of hardcoding.",
+  "requiredCapabilities": ["manifest", "suiteResult", "tracker"],
+  "remediation": { "maxIterations": 2 },
+  "budget": { "maxFiles": 12, "maxLines": 400, "maxPatchBytes": 400000 },
+  "rules": [
+    { "id": "traceability", "severity": "blocker", "structural": false,
+      "description": "Every behaviour change references the work item's acceptance criterion it satisfies (in the PR body and, where the project convention says so, in the test name)." },
+    { "id": "audit-trail", "severity": "blocker", "structural": false,
+      "description": "A change to a persisted business entity keeps who/when/what recoverable: no in-place overwrite of audited fields without the audit record the project convention requires." },
+    { "id": "schema-migration-rollback", "severity": "major", "structural": false,
+      "description": "A schema migration ships with its rollback, or the PR declares why a rollback is impossible." },
+    { "id": "no-console-debug", "severity": "major", "pattern": "console\\.(log|debug)\\(", "paths": ["src/**"],
+      "description": "Debug output left in production code." }
+  ],
+  "severity": {},
+  "overrideRequiresSecondApprover": ["traceability", "audit-trail", "honesty"],
+  "secretPatterns": [],
+  "tracker": {
+    "adapter": "command",
+    "command": ["node", "tools/tracker-lookup.js"],
+    "timeoutMs": 10000,
+    "_comment": "Replace with your exporter: an executable that receives the item key as last argument and prints JSON. Use adapter \"fixture\" with \"path\" to point at an exported JSON file instead."
+  }
+}

@@ -1,0 +1,488 @@
+[
+ {
+  "id": "aws-1",
+  "kind": "clear",
+  "expect": [
+   "aws-devops-engineer"
+  ],
+  "prompt": "Monte o pipeline do GitHub Actions que builda a imagem, publica no ECR e faz deploy blue/green no ECS.",
+  "got": "aws-devops-engineer",
+  "ok": true
+ },
+ {
+  "id": "aws-2",
+  "kind": "boundary",
+  "expect": [
+   "aws-devops-engineer"
+  ],
+  "prompt": "Os pods do nosso EKS reiniciam com OOMKilled a cada pico de tráfego; ajuste requests/limits e o HPA.",
+  "got": "aws-devops-engineer",
+  "ok": true
+ },
+ {
+  "id": "cache-1",
+  "kind": "clear",
+  "expect": [
+   "cache-search-engineer"
+  ],
+  "prompt": "A busca de produtos no OpenSearch não acha 'celular' quando o usuário digita 'smartphone'. Configure sinônimos e reindexe.",
+  "got": "cache-search-engineer",
+  "ok": true
+ },
+ {
+  "id": "cache-2",
+  "kind": "boundary",
+  "expect": [
+   "cache-search-engineer"
+  ],
+  "prompt": "Quando a chave do catálogo expira no Redis, 300 requisições batem no Postgres ao mesmo tempo. Como evitar?",
+  "got": "cache-search-engineer",
+  "ok": true
+ },
+ {
+  "id": "cy-1",
+  "kind": "clear",
+  "expect": [
+   "cypress-qa-analyst"
+  ],
+  "prompt": "Escreva os testes E2E em Cypress do fluxo de cadastro com validação de CPF.",
+  "got": "cypress-qa-analyst",
+  "ok": true
+ },
+ {
+  "id": "cy-2",
+  "kind": "boundary",
+  "expect": [
+   "cypress-qa-analyst"
+  ],
+  "prompt": "Metade dos nossos testes E2E falha só no CI por timeout de seletor. Estabilize a suíte.",
+  "got": "cypress-qa-analyst",
+  "ok": true
+ },
+ {
+  "id": "net-1",
+  "kind": "clear",
+  "expect": [
+   "dotnet-backend-architect"
+  ],
+  "prompt": "Crie o endpoint de faturamento em ASP.NET Core com EF Core e validação com FluentValidation.",
+  "got": "dotnet-backend-architect",
+  "ok": true
+ },
+ {
+  "id": "net-2",
+  "kind": "boundary",
+  "expect": [
+   "dotnet-backend-architect"
+  ],
+  "prompt": "Nosso DbContext do EF Core está gerando N+1 na listagem de pedidos em C#. Corrija o mapeamento.",
+  "got": "dotnet-backend-architect",
+  "ok": true
+ },
+ {
+  "id": "rev-1",
+  "kind": "clear",
+  "expect": [
+   "emstech-reviewer"
+  ],
+  "prompt": "Rode o gate de revisão emstech no diff desta worktree antes do commit do item ABC-77.",
+  "got": "emstech-reviewer",
+  "ok": true
+ },
+ {
+  "id": "rev-2",
+  "kind": "boundary",
+  "expect": [
+   "emstech-reviewer"
+  ],
+  "prompt": "Revise o PR #88 com as regras emstech e deixe um único comentário atualizado no PR.",
+  "got": "emstech-reviewer",
+  "ok": true
+ },
+ {
+  "id": "gosdet-1",
+  "kind": "clear",
+  "expect": [
+   "go-sdet-backend"
+  ],
+  "prompt": "Escreva testes table-driven e um fuzz test para o parser de CNAB em internal/cnab/parser.go.",
+  "got": "go-sdet-backend",
+  "ok": true
+ },
+ {
+  "id": "gosdet-2",
+  "kind": "boundary",
+  "expect": [
+   "go-sdet-backend"
+  ],
+  "prompt": "Suspeito de data race no cache em memória do serviço Go de pedidos; escreva testes que provem ou descartem.",
+  "got": "go-sdet-backend",
+  "ok": true
+ },
+ {
+  "id": "go-1",
+  "kind": "clear",
+  "expect": [
+   "go-senior-engineer"
+  ],
+  "prompt": "Implemente em Go um consumidor gRPC com retry exponencial e cancelamento por context.",
+  "got": "go-senior-engineer",
+  "ok": true
+ },
+ {
+  "id": "go-2",
+  "kind": "boundary",
+  "expect": [
+   "go-senior-engineer"
+  ],
+  "prompt": "Refatore o handler HTTP em Go que tem 400 linhas e mistura regra de negócio com acesso a banco.",
+  "got": "go-senior-engineer",
+  "ok": true
+ },
+ {
+  "id": "cost-1",
+  "kind": "clear",
+  "expect": [
+   "infra-cost-estimator"
+  ],
+  "prompt": "Quanto vamos pagar por mês rodando 12 serviços em Fargate com 2 vCPU cada, 24x7, em sa-east-1?",
+  "got": "infra-cost-estimator",
+  "ok": true
+ },
+ {
+  "id": "cost-2",
+  "kind": "boundary",
+  "expect": [
+   "infra-cost-estimator"
+  ],
+  "prompt": "Vale a pena reservar instâncias por 3 anos ou ficar no on-demand com o nosso padrão de uso sazonal?",
+  "got": "infra-cost-estimator",
+  "ok": true
+ },
+ {
+  "id": "int-1",
+  "kind": "clear",
+  "expect": [
+   "integration-architect"
+  ],
+  "prompt": "Precisamos replicar as mudanças da tabela de pedidos do Postgres para o Kafka com Debezium. Desenhe o pipeline.",
+  "got": "integration-architect",
+  "ok": true
+ },
+ {
+  "id": "int-2",
+  "kind": "boundary",
+  "expect": [
+   "integration-architect"
+  ],
+  "prompt": "O serviço de estoque chama o de pedidos por HTTP e quando um cai o outro cai junto. Como desacoplar com mensageria?",
+  "got": "integration-architect",
+  "ok": true
+ },
+ {
+  "id": "node-1",
+  "kind": "clear",
+  "expect": [
+   "nodejs-backend-architect"
+  ],
+  "prompt": "Crie uma API em NestJS com Prisma para cadastro de clientes, com validação Zod e testes com Vitest.",
+  "got": "nodejs-backend-architect",
+  "ok": true
+ },
+ {
+  "id": "node-2",
+  "kind": "boundary",
+  "expect": [
+   "nodejs-backend-architect"
+  ],
+  "prompt": "Nosso serviço Express trava o event loop quando processa um JSON de 20 MB. Diagnostique.",
+  "got": "nodejs-backend-architect",
+  "ok": true
+ },
+ {
+  "id": "pg-1",
+  "kind": "clear",
+  "expect": [
+   "postgres-dba"
+  ],
+  "prompt": "Esta query leva 9s em produção; aqui está o EXPLAIN ANALYZE. Que índice resolve?",
+  "got": "postgres-dba",
+  "ok": true
+ },
+ {
+  "id": "pg-2",
+  "kind": "boundary",
+  "expect": [
+   "postgres-dba"
+  ],
+  "prompt": "A tabela de eventos tem 2 bilhões de linhas e o autovacuum não dá conta. Planeje particionamento por mês.",
+  "got": "postgres-dba",
+  "ok": true
+ },
+ {
+  "id": "mem-1",
+  "kind": "clear",
+  "expect": [
+   "project-memory-keeper"
+  ],
+  "prompt": "Atualize .claude/memory/architecture.md com a nova integração com o gateway de pagamento que entrou hoje.",
+  "got": "project-memory-keeper",
+  "ok": true
+ },
+ {
+  "id": "mem-2",
+  "kind": "boundary",
+  "expect": [
+   "project-memory-keeper"
+  ],
+  "prompt": "Me dá um resumo do projeto a partir da memória canônica antes de eu começar a mexer.",
+  "got": "project-memory-keeper",
+  "ok": true
+ },
+ {
+  "id": "py-1",
+  "kind": "clear",
+  "expect": [
+   "python-engineer"
+  ],
+  "prompt": "Crie um serviço FastAPI com SQLAlchemy async para o recurso /faturas, com testes em pytest.",
+  "got": "python-engineer",
+  "ok": true
+ },
+ {
+  "id": "py-2",
+  "kind": "boundary",
+  "expect": [
+   "python-engineer"
+  ],
+  "prompt": "Meu script pandas estoura memória lendo um CSV de 8 GB. Reescreva para rodar em streaming.",
+  "got": "python-engineer",
+  "ok": true
+ },
+ {
+  "id": "sec-1",
+  "kind": "clear",
+  "expect": [
+   "security-specialist"
+  ],
+  "prompt": "Faça threat modeling STRIDE do novo endpoint público de upload de documentos.",
+  "got": "security-specialist",
+  "ok": true
+ },
+ {
+  "id": "sec-2",
+  "kind": "boundary",
+  "expect": [
+   "security-specialist"
+  ],
+  "prompt": "Escaneie o repositório atrás de segredos commitados e dependências com CVE crítica.",
+  "got": "security-specialist",
+  "ok": true
+ },
+ {
+  "id": "pd-1",
+  "kind": "clear",
+  "expect": [
+   "senior-product-designer"
+  ],
+  "prompt": "Monte o journey map do onboarding de novos lojistas, com emoções, dores e oportunidades por etapa.",
+  "got": "senior-product-designer",
+  "ok": true
+ },
+ {
+  "id": "pd-2",
+  "kind": "boundary",
+  "expect": [
+   "senior-product-designer"
+  ],
+  "prompt": "Temos um pedido vago de 'um painel para o gerente'. Ajude a entender o problema antes de desenhar qualquer tela.",
+  "got": "senior-product-designer",
+  "ok": true
+ },
+ {
+  "id": "po-1",
+  "kind": "clear",
+  "expect": [
+   "senior-product-owner"
+  ],
+  "prompt": "Quebre a feature de devolução de pedidos em user stories INVEST com critérios de aceite em Gherkin.",
+  "got": "senior-product-owner",
+  "ok": true
+ },
+ {
+  "id": "po-2",
+  "kind": "boundary",
+  "expect": [
+   "senior-product-owner"
+  ],
+  "prompt": "Tenho 18 pedidos de melhoria para o próximo trimestre. Priorize com RICE.",
+  "got": "senior-product-owner",
+  "ok": true
+ },
+ {
+  "id": "react-1",
+  "kind": "clear",
+  "expect": [
+   "senior-react-developer"
+  ],
+  "prompt": "Crie um componente React de tabela paginada, acessível, com ordenação por coluna e testes com RTL.",
+  "got": "senior-react-developer",
+  "ok": true
+ },
+ {
+  "id": "react-2",
+  "kind": "boundary",
+  "expect": [
+   "senior-react-developer"
+  ],
+  "prompt": "A tela de checkout em React re-renderiza inteira a cada tecla digitada. Descubra por quê e corrija.",
+  "got": "senior-react-developer",
+  "ok": true
+ },
+ {
+  "id": "arch-1",
+  "kind": "clear",
+  "expect": [
+   "system-architect"
+  ],
+  "prompt": "Desenhe a arquitetura de um sistema de reservas que aguente 5 mil reservas por segundo em picos.",
+  "got": "system-architect",
+  "ok": true
+ },
+ {
+  "id": "arch-2",
+  "kind": "boundary",
+  "expect": [
+   "system-architect"
+  ],
+  "prompt": "Devemos quebrar o monolito de pedidos em serviços ou modularizar primeiro? Registre a decisão num ADR.",
+  "got": "system-architect",
+  "ok": true
+ },
+ {
+  "id": "tw-1",
+  "kind": "clear",
+  "expect": [
+   "technical-writer"
+  ],
+  "prompt": "Escreva o guia de getting-started do nosso SDK público para desenvolvedores externos.",
+  "got": "technical-writer",
+  "ok": true
+ },
+ {
+  "id": "tw-2",
+  "kind": "boundary",
+  "expect": [
+   "technical-writer"
+  ],
+  "prompt": "O README do projeto está confuso para quem chega de fora. Reescreva.",
+  "got": "technical-writer",
+  "ok": true
+ },
+ {
+  "id": "uxm-1",
+  "kind": "clear",
+  "expect": [
+   "ux-designer-mobile"
+  ],
+  "prompt": "Desenhe o fluxo de onboarding do nosso app Android seguindo Material Design 3.",
+  "got": "ux-designer-mobile",
+  "ok": true
+ },
+ {
+  "id": "uxm-2",
+  "kind": "boundary",
+  "expect": [
+   "ux-designer-mobile"
+  ],
+  "prompt": "Como a tela de pedidos do app deve se comportar quando o celular fica sem sinal no meio do checkout?",
+  "got": "ux-designer-mobile",
+  "ok": true
+ },
+ {
+  "id": "uxw-1",
+  "kind": "clear",
+  "expect": [
+   "ux-designer-web"
+  ],
+  "prompt": "Defina os breakpoints e o layout responsivo do nosso dashboard web administrativo.",
+  "got": "ux-designer-web",
+  "ok": true
+ },
+ {
+  "id": "uxw-2",
+  "kind": "boundary",
+  "expect": [
+   "ux-designer-web"
+  ],
+  "prompt": "O formulário web de cadastro perde 40% dos usuários no terceiro passo. Faça uma avaliação heurística.",
+  "got": "ux-designer-web",
+  "ok": true
+ },
+ {
+  "id": "gap-flutter",
+  "kind": "gap",
+  "expect": [
+   "general-purpose",
+   "claude"
+  ],
+  "prompt": "Implemente em Flutter a tela de login com Riverpod e testes de widget.",
+  "got": "general-purpose",
+  "ok": true
+ },
+ {
+  "id": "gap-java",
+  "kind": "gap",
+  "expect": [
+   "general-purpose",
+   "claude"
+  ],
+  "prompt": "Crie um microserviço em Java com Spring Boot 3 e JPA para o cadastro de fornecedores.",
+  "got": "general-purpose",
+  "ok": true
+ },
+ {
+  "id": "gap-sap",
+  "kind": "gap",
+  "expect": [
+   "general-purpose",
+   "claude"
+  ],
+  "prompt": "Mapeie um pedido de compra recebido por EDI para o IDoc ORDERS05 no SAP S/4HANA.",
+  "got": "integration-architect",
+  "ok": false
+ },
+ {
+  "id": "gap-contract",
+  "kind": "gap",
+  "expect": [
+   "general-purpose",
+   "claude"
+  ],
+  "prompt": "Revise as cláusulas de limitação de responsabilidade deste contrato de SaaS com o fornecedor.",
+  "got": "general-purpose",
+  "ok": true
+ },
+ {
+  "id": "gap-mysql",
+  "kind": "gap",
+  "expect": [
+   "general-purpose",
+   "claude"
+  ],
+  "prompt": "Nossa réplica MySQL está com 40 minutos de atraso de replicação. Diagnostique.",
+  "got": "general-purpose",
+  "ok": true
+ },
+ {
+  "id": "gap-azure",
+  "kind": "gap",
+  "expect": [
+   "general-purpose",
+   "claude"
+  ],
+  "prompt": "Escreva o Bicep para uma Azure Function com Key Vault e Application Insights.",
+  "got": "general-purpose",
+  "ok": true
+ }
+]

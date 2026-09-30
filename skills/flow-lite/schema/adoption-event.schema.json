@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "flow-lite/adoption-event/v1",
+  "title": "flow-lite adoption event",
+  "description": "Derived from run-summary.json by scripts/lib/telemetry.js derive(). Identifiers and counts, never content: no code, diffs, file paths, item keys, titles, finding text, CLAUDE.md content, branch names or credentials. Adding a field requires a PR that changes derive() and this file together.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "eventId", "occurredAt", "command", "agentVersion", "identity", "context", "volume", "usage", "outcome", "cost"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "eventId": { "type": "string", "format": "uuid" },
+    "occurredAt": { "type": "string", "description": "UTC" },
+    "command": { "const": "flow-lite" },
+    "agentVersion": { "type": "string" },
+    "identity": {
+      "type": "object", "additionalProperties": false,
+      "required": ["userId", "repoId", "idScope"],
+      "properties": {
+        "userId": { "type": "string", "description": "sha256(salt, git user.email or OS user), 32 hex chars. Counts distinct people; never a list, never a leaderboard." },
+        "repoId": { "type": ["string", "null"], "description": "sha256(salt, normalized origin URL). Never the URL." },
+        "idScope": { "enum": ["org", "machine"], "description": "org when an org-wide salt is configured (stable across machines); machine otherwise. A machine-scoped id counts machines, not people, and the event says so." }
+      }
+    },
+    "context": {
+      "type": "object", "additionalProperties": false,
+      "required": ["profileName", "profileVersion", "targetRefId", "reportOnly"],
+      "properties": {
+        "profileName": { "type": "string" },
+        "profileVersion": { "type": ["string", "null"] },
+        "targetRefId": { "type": ["string", "null"], "description": "Hash of the base ref. Never the branch name." },
+        "reportOnly": { "type": "boolean" }
+      }
+    },
+    "volume": {
+      "type": "object", "additionalProperties": false,
+      "required": ["items", "itemsPlanned", "iterationsTotal", "iterationsMax", "iterationsMedian"],
+      "properties": {
+        "items": { "type": "integer" },
+        "itemsPlanned": { "type": ["integer", "null"] },
+        "iterationsTotal": { "type": "integer" },
+        "iterationsMax": { "type": "integer" },
+        "iterationsMedian": { "type": ["number", "null"] }
+      }
+    },
+    "usage": {
+      "type": "object", "additionalProperties": false,
+      "required": ["overridesByRule", "stopPhases", "exitCodes"],
+      "properties": {
+        "overridesByRule": { "type": "object", "additionalProperties": { "type": "integer" }, "description": "rule id → count" },
+        "stopPhases": { "type": "object", "additionalProperties": { "type": "integer" }, "description": "phase id → count" },
+        "exitCodes": { "type": "object", "additionalProperties": { "type": "integer" }, "description": "exit code → count" }
+      }
+    },
+    "outcome": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "committed", "blocked", "aborted", "inconclusive", "verdicts", "blockersByRule", "inconclusiveRate"],
+      "properties": {
+        "status": { "enum": ["running", "completed", "failed"] },
+        "committed": { "type": "integer" },
+        "blocked": { "type": "integer" },
+        "aborted": { "type": "integer" },
+        "inconclusive": { "type": "integer" },
+        "verdicts": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "blockersByRule": { "type": "object", "additionalProperties": { "type": "integer" }, "description": "rule id → count. The id travels, never the finding's prose." },
+        "inconclusiveRate": { "type": ["number", "null"] }
+      }
+    },
+    "cost": {
+      "type": "object", "additionalProperties": false,
+      "required": ["elapsedMs", "tokensStatus", "tokensIn", "tokensOut", "byPhase"],
+      "properties": {
+        "elapsedMs": { "type": "integer" },
+        "tokensStatus": { "enum": ["measured", "inconclusive", "not-measured"] },
+        "tokensIn": { "type": ["integer", "null"] },
+        "tokensOut": { "type": ["integer", "null"] },
+        "byPhase": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object", "additionalProperties": false,
+            "properties": { "durationMs": { "type": "integer" }, "tokensIn": { "type": ["integer", "null"] }, "tokensOut": { "type": ["integer", "null"] } }
+          }
+        }
+      }
+    }
+  }
+}

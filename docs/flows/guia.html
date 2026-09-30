@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Guia dos fluxos orquestrados — /flow e /bug-flow</title>
+<style>
+  @page { size: A4 portrait; margin: 20mm 20mm 16mm 20mm; }
+
+  :root {
+    --ink: #0f172a;
+    --soft: #475569;
+    --muted: #94a3b8;
+    --line: #dbe1ea;
+    --goal: #4f46e5;
+    --spec: #7c3aed;
+    --arch: #0891b2;
+    --sec: #dc2626;
+    --build: #059669;
+    --qa: #d97706;
+    --rev: #c026d3;
+    --ship: #16a34a;
+    --bg-soft: #f6f7fb;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    font-size: 10pt;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  h1, h2, h3, h4 { line-height: 1.2; margin: 0 0 .35em; }
+  h1 { font-size: 21pt; letter-spacing: -.02em; }
+  h2 {
+    font-size: 15pt; margin-top: 0; padding-bottom: .25em;
+    border-bottom: 2px solid var(--line);
+  }
+  h3 { font-size: 11.5pt; margin-top: 1.3em; }
+  h4 { font-size: 10pt; margin-top: 1em; color: var(--soft); }
+  p { margin: 0 0 .65em; }
+  ul, ol { margin: 0 0 .7em; padding-left: 1.15em; }
+  li { margin-bottom: .25em; }
+  strong { font-weight: 600; }
+  code {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: .87em;
+    background: #eef1f6;
+    padding: .08em .3em;
+    border-radius: 3px;
+  }
+  pre {
+    background: #f6f7fb; border: 1px solid var(--line); border-left: 3px solid var(--muted);
+    border-radius: 5px; padding: .6em .8em; margin: 0 0 .8em;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 7.6pt; line-height: 1.45; white-space: pre-wrap; overflow-wrap: break-word;
+    page-break-inside: avoid;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+
+  table { width: 100%; border-collapse: collapse; margin: 0 0 .9em; font-size: 8.6pt; }
+  th, td { text-align: left; padding: .38em .5em; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: #eef1f6; font-weight: 600; font-size: 8.2pt; letter-spacing: .01em; }
+  tbody tr:nth-child(even) { background: #fafbfd; }
+  td.n { white-space: nowrap; }
+
+  figure { margin: .5em 0 1.1em; page-break-inside: avoid; }
+  figure img { width: 100%; max-width: 100%; max-height: 202mm; height: auto; display: block; margin: 0 auto; }
+  figure.tall img { width: auto; }
+  figcaption { font-size: 8pt; color: var(--muted); font-style: italic; margin-top: .35em; text-align: center; }
+
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .avoid { page-break-inside: avoid; }
+
+  /* capa */
+  .cover { height: 245mm; display: flex; flex-direction: column; justify-content: center; }
+  .cover .eyebrow { font-size: 9pt; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin-bottom: .8em; }
+  .cover h1 { font-size: 32pt; margin-bottom: .25em; }
+  .cover .sub { font-size: 12.5pt; color: var(--soft); margin-bottom: 2.2em; max-width: 135mm; }
+  .cover .rule { height: 4px; width: 70mm; background: linear-gradient(90deg, var(--goal), var(--arch), var(--build)); margin-bottom: 2.2em; }
+  .cover dl { display: grid; grid-template-columns: 32mm 1fr; gap: .45em 1em; font-size: 9.5pt; margin: 0; }
+  .cover dt { color: var(--muted); }
+  .cover dd { margin: 0; }
+
+  /* blocos */
+  .callout {
+    border: 1px solid var(--line); border-left: 3px solid var(--goal);
+    background: #f8f9fc; border-radius: 5px; padding: .65em .85em; margin: 0 0 .9em;
+    font-size: 9.2pt;
+  }
+  .callout.warn { border-left-color: var(--qa); background: #fffaf3; }
+  .callout.danger { border-left-color: var(--sec); background: #fef6f6; }
+  .callout .t { font-weight: 600; display: block; margin-bottom: .2em; }
+
+  .gate {
+    border: 1px solid var(--line); border-radius: 6px; padding: .6em .8em .5em;
+    margin: 0 0 .8em; page-break-inside: avoid;
+  }
+  .gate h4 { margin: 0 0 .4em; font-size: 10.5pt; color: var(--ink); display: flex; align-items: baseline; gap: .5em; }
+  .gate h4 .num {
+    display: inline-block; min-width: 20px; text-align: center; color: #fff;
+    border-radius: 20px; font-size: 8pt; padding: .1em .45em; font-weight: 700;
+  }
+  .gate dl { display: grid; grid-template-columns: 26mm 1fr; gap: .2em .8em; margin: 0; font-size: 9pt; }
+  .gate dt { color: var(--muted); }
+  .gate dd { margin: 0; }
+  .g-goal  { border-top: 3px solid var(--goal); }  .g-goal .num  { background: var(--goal); }
+  .g-spec  { border-top: 3px solid var(--spec); }  .g-spec .num  { background: var(--spec); }
+  .g-arch  { border-top: 3px solid var(--arch); }  .g-arch .num  { background: var(--arch); }
+  .g-sec   { border-top: 3px solid var(--sec); }   .g-sec .num   { background: var(--sec); }
+  .g-build { border-top: 3px solid var(--build); } .g-build .num { background: var(--build); }
+  .g-qa    { border-top: 3px solid var(--qa); }    .g-qa .num    { background: var(--qa); }
+  .g-rev   { border-top: 3px solid var(--rev); }   .g-rev .num   { background: var(--rev); }
+  .g-ship  { border-top: 3px solid var(--ship); }  .g-ship .num  { background: var(--ship); }
+
+  .verdict { font-weight: 600; }
+  .ok { color: var(--build); } .no { color: var(--sec); } .warnc { color: var(--qa); }
+
+  .toc { font-size: 9.5pt; }
+  .toc ol { list-style: none; padding: 0; counter-reset: s; }
+  .toc > ol > li { counter-increment: s; padding: .35em 0; border-bottom: 1px solid var(--line); }
+  .toc > ol > li::before { content: counter(s) "."; color: var(--muted); margin-right: .6em; }
+  .toc .d { color: var(--muted); font-size: 8.6pt; display: block; margin-left: 1.4em; }
+
+  .two { column-count: 2; column-gap: 8mm; }
+  .two > * { break-inside: avoid; }
+
+  .foot { font-size: 8pt; color: var(--muted); border-top: 1px solid var(--line); padding-top: .5em; margin-top: 1.5em; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════ CAPA ══════════════════ -->
+<section class="page cover">
+  <div class="eyebrow">EMS-NCTECH · agents-hub-claude</div>
+  <h1>Fluxos orquestrados</h1>
+  <div class="sub"><code>/flow</code> e <code>/bug-flow</code> — como usar, o que cada gate verifica e como a cadeia se comporta quando os agents discordam.</div>
+  <div class="rule"></div>
+  <dl>
+    <dt>Documento</dt><dd>Guia de uso com exemplos comentados</dd>
+    <dt>Público</dt><dd>Engenharia — devs, tech leads, PO e QA</dd>
+    <dt>Fonte</dt><dd><code>commands/flow.md</code> · <code>commands/bug-flow.md</code> · <code>commands/code-review.md</code></dd>
+    <dt>Versão em texto</dt><dd><code>docs/FLOWS.md</code></dd>
+    <dt>Data</dt><dd>17 de agosto de 2026</dd>
+  </dl>
+</section>
+
+<!-- ══════════════════ SUMÁRIO + QUANDO USAR ══════════════════ -->
+<section class="page">
+  <h2>Sumário</h2>
+  <div class="toc">
+    <ol>
+      <li>Qual fluxo usar <span class="d">e o que muda entre <code>/flow</code>, <code>/bug-flow</code>, <code>/feature-flow</code> e <code>/incident-response</code></span></li>
+      <li>Pré-requisitos <span class="d">memória do projeto, confirmação de intenção, ID da demanda, sessões peer</span></li>
+      <li><code>/flow</code> — cadeia e gates <span class="d">os sete gates, um a um, com o critério exato de aprovação</span></li>
+      <li>Exemplo comentado de <code>/flow</code> <span class="d">demanda real do início ao SHIP, com a consulta peer no meio</span></li>
+      <li><code>/bug-flow</code> — cadeia e gates <span class="d">nove fases, fast path S1 e o critério de RCA específica</span></li>
+      <li>Exemplo comentado de <code>/bug-flow</code> <span class="d">de um bug intermitente ao teste de regressão que o pinou</span></li>
+      <li>Modelo de looping e discordância <span class="d">as quatro formas de discordância, a regra do loop-back e o mapa de retorno</span></li>
+      <li>Precedência entre agents <span class="d">quem ganha quando dois specialists apontam para lados opostos</span></li>
+      <li>Anti-padrões e cheat sheet</span></li>
+    </ol>
+  </div>
+
+  <h2 style="margin-top:1.6em">1. Qual fluxo usar</h2>
+  <table>
+    <thead><tr><th style="width:32%">Situação</th><th style="width:22%">Command</th><th>Por quê</th></tr></thead>
+    <tbody>
+      <tr><td>Ideia nova, mudança de produto, feature</td><td class="n"><strong><code>/flow</code></strong></td><td>Ancora a entrega numa métrica de sucesso antes de qualquer linha de código</td></tr>
+      <tr><td>Comportamento errado num sistema que já existe</td><td class="n"><strong><code>/bug-flow</code></strong></td><td>Prioriza RCA específica e teste de regressão</td></tr>
+      <tr><td>Feature, mas a métrica já está definida fora</td><td class="n"><code>/feature-flow</code></td><td>Mesma cadeia sem a fase GOAL — <em>superseded</em>, prefira <code>/flow</code></td></tr>
+      <tr><td>Produção quebrada agora</td><td class="n"><code>/incident-response</code></td><td>Mitiga primeiro, investiga depois; cai em <code>/bug-flow</code> para o fix permanente</td></tr>
+    </tbody>
+  </table>
+  <p>A única diferença entre <code>/flow</code> e <code>/feature-flow</code> é a fase 0. Se você não consegue dizer qual número muda com a entrega, o <code>/flow</code> te obriga a descobrir isso antes — e esse é o ponto dele.</p>
+
+  <h2 style="margin-top:1.4em">2. Pré-requisitos</h2>
+  <p>Os dois fluxos abrem com o mesmo pre-flight:</p>
+  <ol>
+    <li><strong>Memória do projeto carregada.</strong> Precisa existir <code>.claude/memory/{business,architecture,guidelines}.md</code>. Se faltar, o fluxo <strong>para</strong> e pede <code>/bootstrap-project</code>.</li>
+    <li><strong>Intenção confirmada.</strong> O orquestrador reformula o pedido em uma frase e confirma com você antes de gastar tokens na cadeia.</li>
+    <li><strong>ID da demanda alocado.</strong> Próximo <code>NNN</code> varrendo <code>docs/todo/</code> e <code>docs/done/</code>; cria <code>docs/todo/&lt;NNN&gt;-&lt;nome&gt;/task.md</code> (flow) ou <code>bug.md</code> (bug-flow).</li>
+    <li><strong>Sessões peer (só <code>/flow</code>, opcional).</strong> <code>ListAgents</code> → uma sessão por repo afetado → handshake. Sem peer aberto, a cadeia roda idêntica.</li>
+  </ol>
+  <div class="callout"><span class="t">O orquestrador nunca escreve código</span>
+  Ele delega para o agent da stack, avalia o gate e sintetiza. Isso vale para os dois fluxos, em todas as fases.</div>
+</section>
+
+<!-- ══════════════════ /flow ══════════════════ -->
+<section class="page">
+  <h2>3. <code>/flow</code> — a cadeia GOAL → SHIP</h2>
+  <pre><code>/flow reduzir o tempo de primeira resposta do suporte incluindo
+      histórico de pedidos na tela do atendente</code></pre>
+  <figure class="tall">
+    <img src="print/p01-flow.png" alt="As sete fases do /flow com o critério de cada gate">
+    <figcaption>Cada seta entre fases é um gate. Gate que não está verde não passa.</figcaption>
+  </figure>
+  <p>A métrica GOAL estabelecida na fase 0 é o fio que atravessa todas as outras: toda fase seguinte carrega essa métrica no seu briefing, e a fase que não consegue se amarrar nela é sinal de re-scope, não de seguir em frente.</p>
+</section>
+
+<section class="page">
+  <h2>3.1 Cada gate, em detalhe</h2>
+
+  <div class="gate g-goal">
+    <h4><span class="num">0</span> GOAL — Discovery</h4>
+    <dl>
+      <dt>Roda</dt><dd><code>/discovery</code></dd>
+      <dt>Produz</dt><dd><code>docs/discovery/&lt;slug&gt;.md</code> — problem statement, usuários afetados, outcome JTBD e a métrica de sucesso</dd>
+      <dt>Verde quando</dt><dd>recomendação é <span class="verdict ok">Go</span> <em>e</em> a métrica é concreta: nome + baseline com fonte + alvo com data</dd>
+      <dt>Amarelo</dt><dd><span class="verdict warnc">Learn-more</span> → pausa o fluxo até os experimentos sinalizados rodarem</dd>
+      <dt>Vermelho</dt><dd><span class="verdict no">No-go</span> → encerra o fluxo</dd>
+    </dl>
+    <p style="margin:.5em 0 0; font-size:9pt">“Reduzir tempo de resposta” <strong>não</strong> passa. “TTFR mediano do suporte: 8m40s (baseline: dashboard support-ops, jul/2026) → 4m até 30/09” passa.</p>
+  </div>
+
+  <div class="gate g-spec">
+    <h4><span class="num">1</span> DEFINE — Spec / PO</h4>
+    <dl>
+      <dt>Roda</dt><dd><code>senior-product-owner</code></dd>
+      <dt>Produz</dt><dd>em <code>task.md</code>: descrição, segmento, stories INVEST, AC em Gherkin, out of scope e a ligação AC ↔ métrica GOAL</dd>
+      <dt>Verde quando</dt><dd>AC testáveis · escopo delimitado · sem conflito com <code>business.md</code> · <strong>ao menos uma AC move a métrica GOAL</strong></dd>
+      <dt>Memória</dt><dd>regra de domínio nova → <code>project-memory-keeper</code> atualiza <code>business.md</code></dd>
+    </dl>
+    <p style="margin:.5em 0 0; font-size:9pt">A cláusula que mais reprova aqui é a última: um conjunto de AC bem escrito que não move a métrica declarada na fase 0 significa que o escopo derivou.</p>
+  </div>
+
+  <div class="gate g-arch">
+    <h4><span class="num">2</span> PLAN — Arquitetura</h4>
+    <dl>
+      <dt>Roda</dt><dd><code>system-architect</code> (+ <code>integration-architect</code> se integração-pesado, + <code>postgres-dba</code> se DB-pesado)</dd>
+      <dt>Produz</dt><dd>guia de implementação, trade-offs, abordagem recomendada, <strong>decomposição em tarefas atômicas</strong> mapeadas a AC, ADR se houver decisão estrutural</dd>
+      <dt>Verde quando</dt><dd>tarefas atômicas e ordenadas por dependência · <strong>impacto de NFR não ameaça a métrica GOAL</strong> · superfície sensível marcada</dd>
+      <dt>Sensível</dt><dd>auth, authz, sessão, secrets, PII, pagamentos, upload/download, desserialização, SQL cru, shell exec, isolamento multi-tenant, nova integração externa</dd>
+    </dl>
+    <p style="margin:.5em 0 0; font-size:9pt"><strong>Consulta peer (condicional).</strong> Se o design muda um contrato que outro repo consome e há sessão aberta lá, o <code>/flow</code> pergunta o que aquele repo <em>de fato</em> consome hoje — ancorado em <code>origin/main</code>, exigindo que a resposta cite ref e sha. Contradição aqui vale um re-scope <strong>antes</strong> do BUILD.</p>
+  </div>
+
+  <div class="gate g-sec">
+    <h4><span class="num">2.5</span> SEC — Threat modeling (condicional)</h4>
+    <dl>
+      <dt>Roda</dt><dd><code>security-specialist</code> — só se a fase 2 marcou superfície sensível. <strong>Obrigatória</strong> quando cruza trust boundary</dd>
+      <dt>Produz</dt><dd>tabela STRIDE + lista de “controles obrigatórios” na seção Security do <code>task.md</code></dd>
+      <dt>Verde quando</dt><dd>os controles são <strong>concretos e atribuídos ao BUILD</strong></dd>
+    </dl>
+    <p style="margin:.5em 0 0; font-size:9pt">“Validar entrada” não é controle concreto. “Rejeitar <code>order_id</code> que não pertença ao <code>tenant_id</code> da sessão, com teste em <code>handler_test.go</code>” é.</p>
+  </div>
+</section>
+
+<section class="page">
+  <div class="gate g-build">
+    <h4><span class="num">3</span> BUILD — Dev por stack</h4>
+    <dl>
+      <dt>Roda</dt><dd>Go → <code>go-senior-engineer</code> · .NET → <code>dotnet-backend-architect</code> · Node/TS → <code>nodejs-backend-architect</code> · Python → <code>python-engineer</code> · React → <code>senior-react-developer</code> · Postgres-pesado → <code>postgres-dba</code> junto · IaC → <code>aws-devops-engineer</code></dd>
+      <dt>Branch</dt><dd><code>feat/&lt;nome&gt;</code> ou <code>feat/&lt;NNN&gt;-&lt;nome&gt;</code></dd>
+      <dt>Produz</dt><dd>código + testes unitários, <strong>uma fatia atômica por vez</strong>, seguindo <code>guidelines.md</code>; instrumenta a métrica GOAL se ela ainda não for observável</dd>
+      <dt>Verde quando</dt><dd>toda AC é verificável no diff · lint e unit verdes localmente · métrica instrumentada ou já observável</dd>
+    </dl>
+  </div>
+
+  <div class="gate g-qa">
+    <h4><span class="num">4</span> VERIFY — QA/SDET + gate de segurança</h4>
+    <dl>
+      <dt>Roda</dt><dd><code>go-sdet-backend</code> (Go) · <code>cypress-qa-analyst</code> (front/E2E) · os dois quando a mudança atravessa · <strong>depois, sempre, <code>security-specialist</code></strong></dd>
+      <dt>Produz</dt><dd>testes de integração/E2E/fuzz, matriz AC → teste, confirmação de que a métrica emite</dd>
+      <dt>Verde quando</dt><dd><strong>toda AC tem ao menos um teste que falha sem a mudança</strong> · a métrica emite e é consultável · veredicto <span class="verdict ok">APPROVE</span> ou <span class="verdict ok">APPROVE WITH MITIGATIONS</span></dd>
+      <dt>Vermelho</dt><dd><span class="verdict no">BLOCK</span> → volta pro BUILD</dd>
+    </dl>
+    <p style="margin:.5em 0 0; font-size:9pt">O critério “falha sem a mudança” é literal: um teste que passa tanto com quanto sem o patch não conta como cobertura de AC.</p>
+  </div>
+
+  <div class="gate g-rev">
+    <h4><span class="num">5</span> REVIEW</h4>
+    <dl>
+      <dt>Roda</dt><dd><code>/code-review</code> — dispara em paralelo os specialistas aplicáveis ao diff (máx. 6), agrega e deduplica</dd>
+      <dt>Verde quando</dt><dd>nenhum <span class="verdict no">BLOCKER</span></dd>
+      <dt>Cuidado</dt><dd><span class="verdict warnc">NEEDS DISCUSSION</span> significa que dois reviewers se contradisseram — decisão humana antes de qualquer retorno</dd>
+    </dl>
+  </div>
+
+  <div class="gate g-ship">
+    <h4><span class="num">6</span> SHIP</h4>
+    <dl>
+      <dt>Roda</dt><dd><code>/smart-commit</code> + fechamento</dd>
+      <dt>Ações</dt><dd><code>project-memory-keeper</code> sincroniza a memória com <strong>o que de fato saiu</strong> (não com o que foi planejado) · registra o baseline da métrica no momento do ship · notifica peers de repos afetados (só notificação) · move <code>docs/todo/</code> → <code>docs/done/</code></dd>
+      <dt>Verde quando</dt><dd>commits criados · memória sincronizada · baseline registrado · demanda movida</dd>
+    </dl>
+  </div>
+</section>
+
+<!-- ══════════════════ EXEMPLO /flow ══════════════════ -->
+<section class="page">
+  <h2>4. Exemplo comentado — <code>/flow</code></h2>
+  <pre><code>/flow reduzir o tempo de primeira resposta do suporte incluindo
+      histórico de pedidos na tela do atendente</code></pre>
+
+  <h3>Pre-flight</h3>
+  <pre><code>Memória carregada: business.md, architecture.md, guidelines.md ✅
+Entendi: expor os últimos pedidos do cliente na tela do atendente pra cortar
+o tempo até a primeira resposta. Confirma?  → sim
+Demanda alocada: docs/todo/047-historico-pedidos-atendente/task.md
+Peers: orders-api-3f (handshake ok — git@github.com:ems/orders-api.git,
+       main, 9c1a4e2, clean)</code></pre>
+
+  <h3>Fase 0 — GOAL</h3>
+  <pre><code>[047-historico-pedidos-atendente] GOAL — /discovery — PASS
+  Produced: docs/discovery/historico-pedidos-atendente.md
+  GOAL metric: TTFR mediano do suporte
+               8m40s (support-ops dashboard, jul/2026) → 4m até 30/09
+  Recommendation: Go
+  Next: DEFINE — senior-product-owner</code></pre>
+
+  <h3>Fase 1 — DEFINE</h3>
+  <p>O PO devolve 3 stories e 6 AC. Uma delas:</p>
+  <pre><code>Scenario: atendente abre um ticket de cliente com pedidos recentes
+  Given um cliente com ao menos 1 pedido nos últimos 90 dias
+  When o atendente abre o ticket
+  Then os 5 pedidos mais recentes aparecem no painel lateral em até 500ms
+  # Moves GOAL metric? sim — remove a troca de aba pro admin, que é o maior
+  # bloco de tempo medido antes da primeira resposta</code></pre>
+
+  <h3>Fase 2 — PLAN, e a consulta peer</h3>
+  <p>O arquiteto propõe um endpoint novo no <code>orders-api</code> consumido pelo front do suporte. Contrato cross-repo → dispara a consulta peer:</p>
+  <pre><code>SendMessage → orders-api-3f:
+  "Vou adicionar GET /v1/customers/{id}/orders?limit=5 no orders-api.
+   Responda a partir de origin/main — não da sua working tree.
+   Existe endpoint equivalente hoje? Qual o shape de OrderSummary e quais
+   campos são obrigatórios? Cite ref, sha curto, arquivo e linha.
+   Não altere nada."
+
+← resposta (origin/main@9c1a4e2, internal/api/orders.go:88):
+  "Já existe GET /v1/orders?customer_id=&limit= com o mesmo shape.
+   OrderSummary tem id, status, total_cents, created_at — todos obrigatórios."</code></pre>
+</section>
+
+<section class="page">
+  <div class="callout"><span class="t">Por que isso importa</span>
+  O plano muda: reusar o endpoint existente em vez de criar um novo. Uma tarefa a menos e zero mudança de contrato. Um subagent aqui só poderia <em>inferir</em> o que o outro repo consome; a sessão que está dentro dele foi <em>ler</em>. É o único caso em que um peer bate um subagent.</div>
+  <pre><code>[047-…] PLAN — system-architect — PASS
+  Produced: task.md §5, ADR-0012 (cache do painel lateral)
+  GOAL metric: TTFR — traceable? yes (NFR de 500ms é a AC #3)
+  Peer consult: orders-api-3f → endpoint já existe; plano de 5 pra 4 tarefas
+  Sensitive surface: PII (dados de pedido de cliente) → SEC obrigatória
+  Next: SEC — security-specialist</code></pre>
+
+  <h3>Fases 2.5 a 5</h3>
+  <ul>
+    <li><strong>2.5 SEC</strong> — o STRIDE aponta <em>Information Disclosure</em>: o front do suporte poderia pedir pedidos de qualquer <code>customer_id</code>. Controle obrigatório atribuído ao BUILD: checagem de escopo do atendente + teste.</li>
+    <li><strong>3 BUILD</strong> — <code>nodejs-backend-architect</code> no front, <code>go-senior-engineer</code> no consumo do <code>orders-api</code>. Instrumenta o timer <code>support.ttfr</code>.</li>
+    <li><strong>4 VERIFY</strong> — 6 AC, 6 testes, todos falhando sem o patch. O gate de segurança valida que o controle da 2.5 aterrissou no diff. O peer confirma que o consumo não quebrou.</li>
+    <li><strong>5 REVIEW</strong> — <code>/code-review</code> devolve 1 WARNING (cache sem TTL explícito) e zero BLOCKER → passa.</li>
+  </ul>
+
+  <h3>Fase 6 — SHIP</h3>
+  <pre><code>[047-historico-pedidos-atendente] SHIPPED
+  branch: feat/047-historico-pedidos-atendente
+  Phases:    GOAL ✅  DEFINE ✅  PLAN ✅  (SEC ✅)  BUILD ✅
+             VERIFY ✅  REVIEW ✅  SHIP ✅
+  GOAL:      TTFR mediano — baseline 8m40s → target 4m até 30/09
+             (baseline@ship: 8m31s)
+  Files:     7 created, 11 modified
+  ADRs:      ADR-0012
+  AC:        6/6 covered
+  Security:  APPROVE
+  Peers:     1 consulted, 1 repo notified
+  Follow-ups: medir TTFR em 14/09 e comparar com o baseline@ship
+  legend:    ✅ pass · ➖ skipped (not triggered) · ❌ blocked</code></pre>
+  <p>O <code>baseline@ship</code> é o que torna a métrica auditável depois: sem ele, daqui a três semanas ninguém sabe se os 8m40s de julho ainda eram verdade no dia do merge.</p>
+</section>
+
+<!-- ══════════════════ /bug-flow ══════════════════ -->
+<section class="page">
+  <h2>5. <code>/bug-flow</code> — do report ao fix merged</h2>
+  <pre><code>/bug-flow autovacuum não roda em public.events e bloat passou de 40%
+          — ver thread no Slack #db</code></pre>
+  <figure class="tall">
+    <img src="print/p02-bug-flow.png" alt="As nove fases do /bug-flow com o critério de cada gate e o fast path S1">
+    <figcaption>Nove fases. A 6 é condicional; a 3 é implícita no fast path S1.</figcaption>
+  </figure>
+</section>
+
+<section class="page">
+  <h2>5.1 Os gates que mais reprovam</h2>
+
+  <h3>Gate 2 — RCA específica</h3>
+  <p>Este é o gate mais reprovado do fluxo, e o critério é literal:</p>
+  <table>
+    <thead><tr><th style="width:50%">❌ Não passa</th><th>✅ Passa</th></tr></thead>
+    <tbody>
+      <tr><td>“problema de concorrência”</td><td><code>internal/cache/cache.go:142</code> — compare-and-swap não atômico com N≥2 escritores</td></tr>
+      <tr><td>“o autovacuum está mal configurado”</td><td><code>public.events</code> tem <code>autovacuum_vacuum_scale_factor=0.2</code> herdado do default; com 40M linhas o threshold só dispara a cada 8M tuplas mortas</td></tr>
+    </tbody>
+  </table>
+  <p>Se o bug é instância de um anti-padrão que já está em <code>guidelines.md</code>, isso é uma <strong>regressão</strong> e precisa ser sinalizada como tal. Se é classe nova, o <code>project-memory-keeper</code> registra depois do fix.</p>
+
+  <h3>Gate 3 — Severidade e superfície sensível</h3>
+  <table>
+    <thead><tr><th style="width:12%">Sev</th><th style="width:56%">Significa</th><th>Caminho</th></tr></thead>
+    <tbody>
+      <tr><td class="n"><strong>S1</strong></td><td>prod fora, perda de dados, brecha de segurança, dinheiro em risco</td><td>hotfix (fast path)</td></tr>
+      <tr><td class="n"><strong>S2</strong></td><td>fluxo core quebrado para muitos usuários, sem workaround confiável</td><td>normal, prioridade alta</td></tr>
+      <tr><td class="n"><strong>S3</strong></td><td>fluxo não-core degradado, com workaround</td><td>normal</td></tr>
+      <tr><td class="n"><strong>S4</strong></td><td>cosmético / edge case / sem impacto visível</td><td>normal</td></tr>
+    </tbody>
+  </table>
+  <p>Bug em ou perto de auth, authz, secrets, PII, pagamentos, manipulação de arquivo, desserialização, SQL cru ou isolamento multi-tenant torna a fase 6 <strong>obrigatória</strong>.</p>
+
+  <h3>Gate 4 — Fix com teste que pina o bug</h3>
+  <p>Verde quando a causa raiz foi atacada (não o sintoma), existe <strong>teste de regressão que falha antes do fix e passa depois</strong>, e <strong>nenhuma refatoração de carona</strong> entrou no diff. O teste é verificado revertendo o fix e confirmando que ele fica vermelho.</p>
+
+  <div class="callout danger"><span class="t">Fast path S1</span>
+  <code>1 → 2 → 4 → 5 → (6 se aplicável) → 7 → 9</code>. A fase 3 é implícita — declarar S1 já classificou a severidade. A fase 7 continua obrigatória, mas abreviada a BLOCKERs. A fase 8 não bloqueia o fix e também não é pulada: roda em até 24h pós-merge.</div>
+</section>
+
+<!-- ══════════════════ EXEMPLO /bug-flow ══════════════════ -->
+<section class="page">
+  <h2>6. Exemplo comentado — <code>/bug-flow</code></h2>
+  <pre><code>/bug-flow o contador de itens no carrinho às vezes fica menor que o número
+          real depois de dois adds rápidos — intermitente em staging,
+          sem stack trace</code></pre>
+
+  <h3>Fase 1 — Triage</h3>
+  <pre><code>[052-carrinho-contador-perdido] Phase 1 — orchestrator — PASS
+  Repro: 2 POST /cart/items concorrentes no mesmo cart_id → contador
+         incrementa 1x (10 execuções, falha em 6). Documentado em bug.md §2.
+  Suspeita: internal/cart/counter.go (read-modify-write sem lock)
+  Next: Phase 2 — go-senior-engineer</code></pre>
+
+  <h3>Fase 2 — RCA</h3>
+  <pre><code>Defect: internal/cart/counter.go:74 — `c.count = c.count + n` sob RWMutex
+        tomado em RLock (leitura) e não em Lock (escrita). Dois writers
+        concorrentes leem o mesmo valor e escrevem o mesmo resultado;
+        um incremento é perdido.
+Por que não foi pego: TestCounterAdd é sequencial; não há teste com -race.
+Hipóteses descartadas: retry do cliente (logs mostram 2 requests distintos,
+        IDs diferentes); cache stale (o valor errado persiste no banco).</code></pre>
+  <p>Específico, com evidência e <code>arquivo:linha</code> → <strong>gate verde</strong>.</p>
+
+  <h3>Fase 3 — Severidade</h3>
+  <p>S2: fluxo core, sem workaround, o cliente perde item silenciosamente. Superfície sensível: <strong>nenhuma</strong> → a fase 6 não roda.</p>
+
+  <h3>Fase 4 — Fix (teste primeiro)</h3>
+  <pre><code>func TestCounterAdd_Concurrent(t *testing.T) {  // falha com -race antes do fix
+    c := NewCounter()
+    var wg sync.WaitGroup
+    for i := 0; i &lt; 100; i++ {
+        wg.Add(1)
+        go func() { defer wg.Done(); c.Add(1) }()
+    }
+    wg.Wait()
+    if got := c.Value(); got != 100 { t.Fatalf("got %d, want 100", got) }
+}</code></pre>
+  <p>O fix é trocar <code>RLock</code> por <code>Lock</code> no caminho de escrita: 1 arquivo, 2 linhas. Revertido o fix, o teste fica vermelho — gate verde.</p>
+
+</section>
+
+<section class="page">
+  <h3>Fase 5 — QA amplia o escopo do fix</h3>
+  <p>O <code>go-sdet-backend</code> nota que a RCA aponta uma <em>classe</em>: todos os writers do pacote <code>cart</code>. Encontra o mesmo padrão em <code>internal/cart/reservations.go:51</code> e adiciona teste + fix. A suíte passa a rodar com <code>-race</code> no CI.</p>
+
+  <h3>Fechamento</h3>
+  <pre><code>[052-carrinho-contador-perdido] DONE
+  branch: fix/052-carrinho-contador-perdido — severity: S2
+  RCA:        RLock usado em caminho de escrita em counter.go:74;
+              incremento perdido sob concorrência
+  Files:      4 changed
+  Tests:      regressão em counter_test.go + reservations_test.go;
+              CI agora roda -race
+  Security:   n/a
+  Memory:     guidelines.md (anti-padrão RWMutex)
+  Follow-ups: varrer os outros pacotes pelo mesmo padrão (task 053)</code></pre>
+
+  <div class="callout"><span class="t">O que este exemplo mostra</span>
+  <ul style="margin:.3em 0 0">
+    <li>A RCA nomeia <code>arquivo:linha</code> e o passo em falso — é isso que libera o gate 2, não a hipótese plausível.</li>
+    <li>O teste veio antes do fix e foi validado ao contrário: revertendo o patch, ele fica vermelho.</li>
+    <li>O QA não só conferiu o teste: leu a RCA como <em>classe</em> de defeito e achou o mesmo padrão noutro arquivo.</li>
+    <li>A memória guardou o anti-padrão, não o incidente — é o que impede a terceira ocorrência.</li>
+  </ul></div>
+</section>
+
+<!-- ══════════════════ LOOPING ══════════════════ -->
+<section class="page">
+  <h2>7. Modelo de looping e discordância</h2>
+  <p>Um gate reprovado <strong>não</strong> é um erro do fluxo — é o fluxo funcionando. O que importa é para onde a cadeia volta, quem decide e como ela não gira em círculo.</p>
+
+  <figure>
+    <img src="print/p03-loop.png" alt="Os cinco desfechos possíveis de um gate">
+    <figcaption>Os cinco desfechos de um gate. Nenhum retorno acontece sem confirmação humana.</figcaption>
+  </figure>
+
+  <h3>As quatro formas de discordância</h3>
+  <ol>
+    <li><strong>O gate reprova o artefato da própria fase.</strong> AC não testável, RCA vaga, teste que não falha sem o fix. Ninguém discordou de ninguém — a fase simplesmente não entregou o que o gate pede. A fase <em>reexecuta</em>, não volta.</li>
+    <li><strong>O gate reprova por causa de uma decisão tomada lá atrás.</strong> Security dá BLOCK no VERIFY porque o <em>design</em> da fase 2 é que é inseguro. Aqui a cadeia volta de verdade — e volta para a fase 2, não para a 3.</li>
+    <li><strong>Dois agents na mesma fase se contradizem.</strong> É o caso do <code>/code-review</code>, que roda reviewers em paralelo. Mesmo <code>file:line</code> e mesmo problema → deduplica e mantém a severidade mais estrita. Recomendações genuinamente opostas → o command <strong>não escolhe lado</strong>: o achado vai para <em>Conflitos entre reviewers</em> e o veredicto vira <span class="verdict warnc">NEEDS DISCUSSION</span>.</li>
+    <li><strong>Um peer contradiz o design.</strong> A resposta do peer é <strong>evidência, não veredicto</strong> — vem de um contexto que você não enxerga. Se ela muda uma decisão, confirme contra algo concreto antes de agir. E peer nunca segura gate: peer calado vira “não respondido” e a cadeia segue.</li>
+  </ol>
+</section>
+
+<section class="page">
+  <h3>A regra do loop-back</h3>
+  <div class="callout"><span class="t">Volte para quem produziu o defeito, não para a fase imediatamente anterior</span>
+  Um BLOCK de segurança no VERIFY causado por controle ausente volta pro BUILD. O mesmo BLOCK causado por um modelo de dados que expõe PII por construção volta pro PLAN — e obriga a 2.5 a revalidar. Voltar pro BUILD nesse segundo caso só produz um patch em cima de um design que continua errado.</div>
+  <p>Reexecutar uma fase reexecuta os gates a jusante <em>que foram afetados</em>. Consertar um teste no VERIFY não obriga a refazer o PLAN; mudar o contrato no PLAN obriga a refazer tudo depois dele. E o loop nunca é automático: em <span class="verdict no">BLOCK</span> ou <span class="verdict no">No-go</span> o orquestrador para, mostra o achado, propõe o menor caminho pro verde e pede sua confirmação antes de tentar de novo.</p>
+
+  <figure>
+    <img src="print/p04-mapa-retorno.png" alt="Mapa de retorno: de onde falha, para onde volta">
+    <figcaption>Os seis retornos entre fases e as quatro reexecuções no lugar.</figcaption>
+  </figure>
+
+  <h3>Matriz de retorno — <code>/bug-flow</code></h3>
+  <table>
+    <thead><tr><th style="width:16%">Gate</th><th style="width:52%">Achado</th><th>Volta pra</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1 Triage</td><td>não reproduz e não há dados</td><td>1 — marca “não-reproduzível” e pede dados ao reporter</td></tr>
+      <tr><td class="n">2 RCA</td><td>causa vaga, ou causa que é sintoma de outra mais funda</td><td>2</td></tr>
+      <tr><td class="n">4 Fix</td><td>trata sintoma; teste não vira vermelho ao reverter; refactor de carona</td><td>4</td></tr>
+      <tr><td class="n">5 QA</td><td>colateral quebrado</td><td>4</td></tr>
+      <tr><td class="n">5 QA</td><td>RCA aponta classe subtestada</td><td>4 — amplia o fix</td></tr>
+      <tr><td class="n">6 Security</td><td><span class="verdict no">BLOCK</span></td><td><strong>4</strong> (explícito no command)</td></tr>
+      <tr><td class="n">7 Review</td><td><span class="verdict no">BLOCKER</span></td><td>4</td></tr>
+      <tr><td class="n">7 Review</td><td><span class="verdict warnc">NEEDS DISCUSSION</span></td><td>humano decide antes de qualquer volta</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section class="page">
+  <h2>8. Precedência quando dois agents discordam</h2>
+  <figure>
+    <img src="print/p05-precedencia.png" alt="Precedência entre agents, da regra mais forte para a mais fraca">
+    <figcaption>Da regra mais forte para a mais fraca. O orquestrador nunca escolhe lado sozinho.</figcaption>
+  </figure>
+
+  <h3>Convenção anti-loop-infinito</h3>
+  <div class="callout warn"><span class="t">Convenção de uso, não regra escrita nos commands</span>
+  Os commands definem o retorno e a confirmação humana, mas não um contador de tentativas. O que segue é a convenção recomendada — se quiser que valha como regra, dá para codificar nos próprios commands.</div>
+  <ul>
+    <li><strong>Duas voltas no mesmo gate sem ficar verde → pare.</strong> A terceira tentativa quase nunca é o problema; ele costuma estar uma fase acima. Escale para o humano ou re-escope.</li>
+    <li><strong>Registre cada volta</strong> no <code>task.md</code> / <code>bug.md</code>, com fase, achado e o que mudou na tentativa. Sem isso ninguém enxerga que já foram três voltas.</li>
+    <li><strong>Volta que sobe de fase reinicia a contagem.</strong> Voltar do VERIFY pro PLAN é um caminho novo, não a terceira tentativa do mesmo.</li>
+    <li><strong><span class="verdict warnc">NEEDS DISCUSSION</span> não consome tentativa.</strong> Ele suspende a cadeia esperando decisão humana; nada foi tentado ainda.</li>
+  </ul>
+</section>
+
+<!-- ══════════════════ ANTI-PADRÕES + CHEAT SHEET ══════════════════ -->
+<section class="page">
+  <h2>9. Anti-padrões</h2>
+  <table>
+    <thead><tr><th style="width:42%">❌</th><th>Por quê</th></tr></thead>
+    <tbody>
+      <tr><td>Pular fase “pra ganhar tempo”</td><td>Os gates <strong>são</strong> o valor. Cadeia sem gate é só delegação em série</td></tr>
+      <tr><td>Rodar <code>/flow</code> sem métrica com baseline</td><td>A fase 0 para de propósito. Sem métrica você não está pronto pra especificar</td></tr>
+      <tr><td>O orquestrador escrever código</td><td>Ele delega, avalia gate e sintetiza. Código é do dev da stack</td></tr>
+      <tr><td>Pedir a um peer o que esta sessão teve negado</td><td>Contorna uma decisão que <em>você</em> tomou. Trabalho bloqueado volta pro usuário</td></tr>
+      <tr><td>Perguntar pra três sessões do mesmo repo</td><td>Não são três fontes — é um repo visto de três checkouts. Uma por repo, ancorada em ref</td></tr>
+      <tr><td>Deixar um gate esperando peer</td><td>Peer informa gate, nunca é dono dele. Sem resposta → “não respondido” e segue</td></tr>
+      <tr><td>Refatoração de carona no <code>/bug-flow</code></td><td>Bug fix é uma mudança só. Limpeza vai pro <code>/flow</code> ou task própria</td></tr>
+      <tr><td>Aceitar RCA vaga</td><td>“Problema de concorrência” não é causa raiz; é a descrição do sintoma</td></tr>
+      <tr><td>Escolher lado num <span class="verdict warnc">NEEDS DISCUSSION</span></td><td>O conflito existe porque dois specialists competentes discordaram. É decisão humana</td></tr>
+    </tbody>
+  </table>
+
+  <h2 style="margin-top:1.5em">10. Cheat sheet</h2>
+  <pre><code>/flow &lt;ideia&gt;
+   GOAL → DEFINE → PLAN → (SEC) → BUILD → VERIFY → REVIEW → SHIP
+
+/bug-flow &lt;sintoma + evidência&gt;
+   Triage → RCA → Sev → Fix → QA → (Sec) → Review → Memory → Commit
+
+Artefatos
+   docs/discovery/&lt;slug&gt;.md          brief da fase GOAL
+   docs/todo/&lt;NNN&gt;-&lt;nome&gt;/task.md    demanda de feature, seções 0–10
+   docs/todo/&lt;NNN&gt;-&lt;nome&gt;/bug.md     demanda de bug, seções 1–6
+   docs/done/&lt;NNN&gt;-&lt;nome&gt;/           pra onde vai no SHIP / fase 9
+   docs/adr/ADR-NNNN-*.md            decisões estruturais da fase PLAN
+   .claude/memory/{business,architecture,guidelines}.md
+
+Vocabulário de gate
+   Go / No-go / Learn-more             fase GOAL
+   APPROVE / APPROVE WITH MITIGATIONS  security-specialist — verde
+   BLOCK                               security-specialist — para a cadeia
+   APPROVED / …WITH COMMENTS           /code-review — verde
+   CHANGES REQUESTED                   /code-review — tem BLOCKER
+   NEEDS DISCUSSION                    /code-review — reviewers se
+                                       contradisseram → humano decide
+
+Regra do loop-back
+   Volte pra fase que PRODUZIU o defeito, não pra anterior imediata.
+   Nenhum loop é automático — o orquestrador propõe e você confirma.
+   Duas voltas no mesmo gate → pare e escale (convenção).</code></pre>
+
+  <div class="foot">
+    agents-hub-claude · EMS-NCTECH — gerado a partir de <code>commands/flow.md</code> e <code>commands/bug-flow.md</code>.
+    Versão em texto: <code>docs/FLOWS.md</code>. Diagramas: <code>docs/flows/render_print.py</code>.
+  </div>
+</section>
+
+</body>
+</html>
