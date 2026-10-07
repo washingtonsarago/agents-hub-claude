@@ -1,0 +1,5 @@
+# Set DevOps team to control .github directory
+.github/ @EMS-NCTECH/devops
+
+# Set Platform team to control CODEOWNERS file
+.github/CODEOWNERS @EMS-NCTECH/cloud-platform

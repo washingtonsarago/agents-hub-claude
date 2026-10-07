@@ -1,0 +1,6 @@
+{
+  "fingerprint": null,
+  "last_checked": "2026-08-17T12:17Z",
+  "last_change": null,
+  "note": "Run 2026-08-17 inconclusiva (Regra 1): api.github.com bloqueado, gh ausente, sem credencial. fingerprint segue null — o proximo run com acesso vivo a API contara como mudanca e gerara latest.md."
+}

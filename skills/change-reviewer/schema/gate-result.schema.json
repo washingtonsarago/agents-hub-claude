@@ -1,0 +1,351 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "change-reviewer/gate-result/v1",
+  "title": "change-reviewer gate result",
+  "description": "Written by `gate.js finalize` as gate.json. Consumed by /flow-lite, which decides on exitCode alone. Rule ids, severities and verdicts are English and never localized.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "verdict",
+    "exitCode",
+    "item",
+    "baseRef",
+    "diffSha",
+    "profile",
+    "generatedAt",
+    "mode",
+    "context",
+    "capabilities",
+    "stateHash",
+    "findings",
+    "overrides",
+    "positives",
+    "metrics"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "verdict": {
+      "enum": [
+        "pass",
+        "blocked",
+        "inconclusive"
+      ]
+    },
+    "exitCode": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4,
+      "description": "0 cleared · 1 blocker · 2 bad usage/invalid input · 3 missing configuration or credential · 4 inconclusive (could not look). In report-only mode exitCode is 0 while verdict keeps the real result."
+    },
+    "mode": {
+      "enum": [
+        "gate",
+        "report-only"
+      ]
+    },
+    "item": {
+      "type": "string"
+    },
+    "baseRef": {
+      "type": "string"
+    },
+    "diffSha": {
+      "type": "string",
+      "description": "Short HEAD sha of the reviewed worktree"
+    },
+    "profile": {
+      "type": "string",
+      "pattern": "^[^@]+@[^@]+$",
+      "description": "name@version"
+    },
+    "generatedAt": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+      "description": "Always UTC"
+    },
+    "context": {
+      "type": "object",
+      "required": [
+        "filesRead",
+        "directivesApplied",
+        "directivesIgnored"
+      ],
+      "properties": {
+        "filesRead": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "directivesApplied": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "directivesIgnored": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "source",
+              "reason"
+            ],
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              },
+              "excerpt": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "capabilities": {
+      "type": "object",
+      "description": "An absent capability is declared, never silenced. A pass without a manifest is not the same verdict as one with a manifest.",
+      "required": [
+        "manifest",
+        "suiteResult",
+        "tracker",
+        "diffCoverage",
+        "agentReview"
+      ],
+      "properties": {
+        "agentReview": {
+          "enum": [
+            "present",
+            "absent"
+          ],
+          "description": "Whether the change-reviewer agent's findings were merged. `run` (machine rules only) always reports absent."
+        },
+        "manifest": {
+          "enum": [
+            "present",
+            "absent"
+          ]
+        },
+        "suiteResult": {
+          "enum": [
+            "present",
+            "absent"
+          ]
+        },
+        "tracker": {
+          "enum": [
+            "reachable",
+            "unreachable",
+            "not-configured"
+          ]
+        },
+        "diffCoverage": {
+          "enum": [
+            "full",
+            "partial",
+            "not-applicable"
+          ]
+        },
+        "filesOmitted": {
+          "type": "integer",
+          "description": "Files whose patch was withheld by the byte budget. A count, never names."
+        }
+      }
+    },
+    "stateHash": {
+      "type": "object",
+      "required": [
+        "before",
+        "after"
+      ],
+      "properties": {
+        "before": {
+          "type": "string"
+        },
+        "after": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "description": "Worktree state hash at prepare and at finalize. A mismatch makes the verdict inconclusive (exit 4)."
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "suppressed": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "rule": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "overrides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "findingId",
+          "by",
+          "at",
+          "justification"
+        ],
+        "properties": {
+          "findingId": {
+            "type": "string"
+          },
+          "by": {
+            "type": "string"
+          },
+          "at": {
+            "type": "string"
+          },
+          "justification": {
+            "type": "string",
+            "minLength": 10
+          },
+          "requiresSecondApprover": {
+            "type": "boolean",
+            "description": "True when the profile lists the finding's rule under overrideRequiresSecondApprover. The second approval happens in the PR, where it is real and traceable."
+          }
+        }
+      }
+    },
+    "positives": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "declaredLimitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "durationMs",
+        "filesReviewed",
+        "iteration"
+      ],
+      "properties": {
+        "durationMs": {
+          "type": "integer"
+        },
+        "filesReviewed": {
+          "type": "integer"
+        },
+        "iteration": {
+          "type": "integer"
+        }
+      }
+    },
+    "stage": {
+      "enum": [
+        "scope",
+        "change",
+        "reconcile"
+      ],
+      "description": "Which moment of the pipeline produced this verdict"
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": [
+        "id",
+        "rule",
+        "severity",
+        "file",
+        "line",
+        "summary",
+        "evidence",
+        "confirmed"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*-\\d{3}$"
+        },
+        "rule": {
+          "type": "string"
+        },
+        "severity": {
+          "enum": [
+            "blocker",
+            "major",
+            "question"
+          ]
+        },
+        "file": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "line": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "string"
+        },
+        "confirmed": {
+          "type": "boolean"
+        },
+        "overridden": {
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "description": "Only blocker blocks, and only what was confirmed can be a blocker.",
+          "if": {
+            "properties": {
+              "confirmed": {
+                "const": false
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "severity": {
+                "enum": [
+                  "major",
+                  "question"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

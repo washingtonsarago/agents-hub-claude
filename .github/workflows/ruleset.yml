@@ -1,0 +1,15 @@
+name: Ruleset configuration
+#fix_token_vinao
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  push:
+    branches:
+      - main
+
+jobs:
+  main:
+    if: (github.event_name == 'push' && github.run_number == 1) || github.event_name == 'schedule'
+    uses: EMS-NCTECH/nctech-pipeline/.github/workflows/rulesets.yml@main
+    secrets: inherit

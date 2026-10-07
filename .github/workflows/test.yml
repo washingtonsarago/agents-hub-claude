@@ -1,0 +1,28 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    name: Tests + validator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Rastreabilidade do requisito git >= 2.31 (injeção de credencial por
+      # GIT_CONFIG_COUNT): o harness de teste depende dele.
+      - name: git version
+        run: git --version
+
+      - name: Validate artifacts (frontmatter, names, sha integrity, orphans)
+        run: node scripts/validate-artifacts.js --quiet
+
+      - name: Run unit + integration tests
+        run: node --test test/*.test.js

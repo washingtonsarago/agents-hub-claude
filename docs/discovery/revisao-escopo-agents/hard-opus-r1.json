@@ -1,0 +1,249 @@
+[
+ {
+  "id": "h-rev-pr",
+  "kind": "overlap",
+  "expect": [
+   "security-specialist"
+  ],
+  "prompt": "Revise o PR #142: ele mexe no login e na geração do token JWT.",
+  "got": "security-specialist",
+  "ok": true
+ },
+ {
+  "id": "h-rev-generic",
+  "kind": "overlap",
+  "expect": [
+   "general-purpose",
+   "claude"
+  ],
+  "prompt": "Revise o PR #51, que ajusta o texto de alguns botões.",
+  "got": "emstech-reviewer",
+  "ok": false
+ },
+ {
+  "id": "h-design-vs-uxw",
+  "kind": "overlap",
+  "expect": [
+   "ux-designer-web"
+  ],
+  "prompt": "Proponha a navegação do nosso portal web que tem 9 seções e muita gente se perde.",
+  "got": "ux-designer-web",
+  "ok": true
+ },
+ {
+  "id": "h-design-vs-uxm",
+  "kind": "overlap",
+  "expect": [
+   "ux-designer-mobile"
+  ],
+  "prompt": "Tab bar ou menu lateral para o nosso app de entregadores?",
+  "got": "ux-designer-mobile",
+  "ok": true
+ },
+ {
+  "id": "h-design-generic",
+  "kind": "overlap",
+  "expect": [
+   "senior-product-designer"
+  ],
+  "prompt": "Quero medir se o redesenho da área do cliente realmente melhorou a experiência. Como definir as métricas de design?",
+  "got": "senior-product-designer",
+  "ok": true
+ },
+ {
+  "id": "h-arch-vs-int",
+  "kind": "overlap",
+  "expect": [
+   "integration-architect"
+  ],
+  "prompt": "Precisamos que o pagamento aprovado dispare nota fiscal, e-mail e baixa de estoque, com reprocessamento se algo falhar. Desenhe.",
+  "got": "integration-architect",
+  "ok": true
+ },
+ {
+  "id": "h-arch-vs-cost",
+  "kind": "overlap",
+  "expect": [
+   "infra-cost-estimator"
+  ],
+  "prompt": "Postgres self-hosted no Kubernetes ou Aurora gerenciado? A decisão é principalmente por custo total em 3 anos.",
+  "got": "infra-cost-estimator",
+  "ok": true
+ },
+ {
+  "id": "h-aws-vs-cost",
+  "kind": "overlap",
+  "expect": [
+   "aws-devops-engineer",
+   "infra-cost-estimator"
+  ],
+  "prompt": "A conta da AWS subiu 35% no mês passado. Descubra onde e corte sem perder SLA.",
+  "got": "infra-cost-estimator",
+  "ok": true
+ },
+ {
+  "id": "h-pg-vs-cache",
+  "kind": "overlap",
+  "expect": [
+   "postgres-dba"
+  ],
+  "prompt": "A busca textual por nome de cliente está lenta; usamos ILIKE no Postgres. Resolva no próprio banco.",
+  "got": "postgres-dba",
+  "ok": true
+ },
+ {
+  "id": "h-cache-vs-pg",
+  "kind": "overlap",
+  "expect": [
+   "cache-search-engineer"
+  ],
+  "prompt": "A busca por nome de cliente precisa de tolerância a erro de digitação e ranking por relevância, em 40 milhões de registros.",
+  "got": "cache-search-engineer",
+  "ok": true
+ },
+ {
+  "id": "h-tw-vs-mem",
+  "kind": "overlap",
+  "expect": [
+   "project-memory-keeper"
+  ],
+  "prompt": "Refatorei várias pastas hoje; atualize a documentação interna do projeto para refletir o que mudou.",
+  "got": "project-memory-keeper",
+  "ok": true
+ },
+ {
+  "id": "h-mem-vs-tw",
+  "kind": "overlap",
+  "expect": [
+   "technical-writer"
+  ],
+  "prompt": "Escreva o guia de migração da v1 para a v2 da nossa API pública para os clientes.",
+  "got": "technical-writer",
+  "ok": true
+ },
+ {
+  "id": "h-po-vs-pd",
+  "kind": "overlap",
+  "expect": [
+   "senior-product-owner"
+  ],
+  "prompt": "Defina como vamos medir o sucesso do novo onboarding e quais OKRs isso move.",
+  "got": "senior-product-owner",
+  "ok": true
+ },
+ {
+  "id": "h-go-vs-sdet",
+  "kind": "overlap",
+  "expect": [
+   "go-senior-engineer"
+  ],
+  "prompt": "Revise o handler em api/handlers/users.go que acabei de escrever.",
+  "got": "go-senior-engineer",
+  "ok": true
+ },
+ {
+  "id": "h-sdet-vs-go",
+  "kind": "overlap",
+  "expect": [
+   "go-sdet-backend"
+  ],
+  "prompt": "Qual a cobertura real do pacote internal/billing e que casos de teste estão faltando?",
+  "got": "go-sdet-backend",
+  "ok": true
+ },
+ {
+  "id": "h-react-vs-cy",
+  "kind": "overlap",
+  "expect": [
+   "senior-react-developer"
+  ],
+  "prompt": "Adicione testes unitários ao componente UserProfile.",
+  "got": "senior-react-developer",
+  "ok": true
+ },
+ {
+  "id": "h-cy-vs-react",
+  "kind": "overlap",
+  "expect": [
+   "cypress-qa-analyst"
+  ],
+  "prompt": "Qual deve ser a estratégia de testes da nova funcionalidade de carrinho, do unitário ao ponta a ponta?",
+  "got": "cypress-qa-analyst",
+  "ok": true
+ },
+ {
+  "id": "h-nostack-api",
+  "kind": "nostack",
+  "expect": [
+   "general-purpose",
+   "claude",
+   "system-architect"
+  ],
+  "prompt": "Crie uma API REST de cadastro de clientes.",
+  "got": "nodejs-backend-architect",
+  "ok": false
+ },
+ {
+  "id": "h-nostack-slow",
+  "kind": "nostack",
+  "expect": [
+   "general-purpose",
+   "claude"
+  ],
+  "prompt": "O sistema está lento desde ontem. Investigue.",
+  "got": "general-purpose",
+  "ok": true
+ },
+ {
+  "id": "h-nostack-tests",
+  "kind": "nostack",
+  "expect": [
+   "general-purpose",
+   "claude"
+  ],
+  "prompt": "Escreva testes para o módulo de frete.",
+  "got": "general-purpose",
+  "ok": true
+ },
+ {
+  "id": "h-sec-proactive",
+  "kind": "overlap",
+  "expect": [
+   "security-specialist"
+  ],
+  "prompt": "Vou expor um webhook público que recebe pagamentos de um parceiro. O que preciso considerar antes de implementar?",
+  "got": "security-specialist",
+  "ok": true
+ },
+ {
+  "id": "h-arch-adr",
+  "kind": "overlap",
+  "expect": [
+   "system-architect"
+  ],
+  "prompt": "Registre num ADR a decisão de trocar REST por eventos entre pedidos e faturamento.",
+  "got": "project-memory-keeper",
+  "ok": false
+ },
+ {
+  "id": "h-flutter-ux",
+  "kind": "gap",
+  "expect": [
+   "ux-designer-mobile"
+  ],
+  "prompt": "Revise a acessibilidade da tela de extrato do nosso app Flutter para TalkBack.",
+  "got": "ux-designer-mobile",
+  "ok": true
+ },
+ {
+  "id": "h-flutter-code",
+  "kind": "gap",
+  "expect": [
+   "general-purpose",
+   "claude"
+  ],
+  "prompt": "O app Flutter trava ao rolar a lista de pedidos. Otimize o build dos widgets.",
+  "got": "general-purpose",
+  "ok": true
+ }
+]

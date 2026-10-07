@@ -1,0 +1,6 @@
+[
+ {"id":"m-1","kind":"gap","expect":["general-purpose","claude"],"prompt":"Escreva testes ponta a ponta com Maestro para o fluxo de login do nosso app Flutter."},
+ {"id":"m-2","kind":"gap","expect":["general-purpose","claude"],"prompt":"Nossos testes E2E do app React Native quebram no CI do Android; estabilize a suíte mobile."},
+ {"id":"m-3","kind":"gap","expect":["general-purpose","claude"],"prompt":"Qual deve ser a estratégia de testes do checkout no app iOS e Android, do widget ao ponta a ponta?"},
+ {"id":"m-4","kind":"gap","expect":["general-purpose","claude"],"prompt":"Automatize o teste do onboarding do app de entregadores rodando em emulador Android no pipeline."}
+]

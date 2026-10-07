@@ -1,0 +1,17 @@
+# Integridade dos artefatos × fim de linha.
+#
+# O `manifest.json` guarda o sha256 do conteúdo EXATO de cada artefato,
+# calculado com LF. O Git for Windows vem com `core.autocrlf=true` por padrão:
+# ele converte LF -> CRLF no checkout, o que muda o sha256 de TODOS os
+# arquivos. O `ahc sync` então recusa gravar cada item com
+# "hash mismatch for ..." e a instalação termina com `added:0`, sem erro
+# aparente. Reproduzido numa máquina Windows em 2026-09-16.
+#
+# `-text` desliga qualquer conversão de fim de linha para todo arquivo do
+# repositório: o working tree fica byte a byte igual em Linux, macOS e Windows,
+# que é o que a verificação de sha256 exige.
+#
+# Isto cobre quem clona o repo (inclusive o espelho). O `bin/ahc` e o
+# `install.sh` também forçam `core.autocrlf=false` nas próprias chamadas git,
+# para não depender da configuração global da máquina do dev.
+* -text

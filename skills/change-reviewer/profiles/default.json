@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "name": "default",
+  "version": "1.0.0",
+  "locale": "en",
+  "requiredCapabilities": [],
+  "remediation": { "maxIterations": 2 },
+  "budget": { "maxFiles": 20, "maxLines": 600, "maxPatchBytes": 400000 },
+  "rules": [],
+  "severity": {},
+  "overrideRequiresSecondApprover": [],
+  "secretPatterns": [],
+  "tracker": { "adapter": "none" }
+}
